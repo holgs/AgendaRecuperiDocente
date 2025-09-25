@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
-import { LogOut, Home, Users, BookOpen, Settings, BarChart3 } from 'lucide-react'
 
 export default function DashboardLayout({
   children,
@@ -38,11 +37,11 @@ export default function DashboardLayout({
   }
 
   const navigationItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Docenti', href: '/teachers', icon: Users },
-    { name: 'Attività', href: '/activities', icon: BookOpen },
-    { name: 'Report', href: '/reports', icon: BarChart3 },
-    { name: 'Impostazioni', href: '/settings', icon: Settings },
+    { name: 'Dashboard', href: '/dashboard' },
+    { name: 'Docenti', href: '/teachers' },
+    { name: 'Attività', href: '/activities' },
+    { name: 'Report', href: '/reports' },
+    { name: 'Impostazioni', href: '/settings' },
   ]
 
   return (
@@ -55,19 +54,15 @@ export default function DashboardLayout({
         
         <nav className="mt-6 px-3">
           <div className="space-y-1">
-            {navigationItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                >
-                  <Icon className="mr-3 h-5 w-5" />
-                  {item.name}
-                </a>
-              )
-            })}
+            {navigationItems.map((item) => (
+              <a
+                key={item.name}
+                href={item.href}
+                className="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+              >
+                {item.name}
+              </a>
+            ))}
           </div>
         </nav>
 
@@ -83,7 +78,7 @@ export default function DashboardLayout({
               onClick={handleSignOut}
               className="ml-2"
             >
-              <LogOut className="h-4 w-4" />
+              Esci
             </Button>
           </div>
         </div>
