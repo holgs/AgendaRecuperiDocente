@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Utenti e ruoli
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  role      String   @default("admin") // admin, docente, viewer
+  name      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  teacher             Teacher?
+  createdRecoveryTypes RecoveryType[]
+  createdActivities   RecoveryActivity[]
+  approvedActivities  RecoveryActivity[] @relation("ApprovedBy")
+  activityLogs        ActivityLog[]
+  systemConfigs       SystemConfig[]
+
+  @@map("users")
+}
+
+// Anni scolastici
+model SchoolYear {
+  id         String    @id @default(uuid())
+  name       String    @unique // "2024/2025"
+  startDate  DateTime  @map("start_date")
+  endDate    DateTime  @map("end_date")
+  isActive   Boolean   @default(false) @map("is_active")
+  weeksCount Int       @map("weeks_count")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  teacherBudgets     TeacherBudget[]
+  recoveryActivities RecoveryActivity[]
+
+  @@map("school_years")
+}
+
+// Docenti
+model Teacher {
+  id        String   @id @default(uuid())
+  cognome   String
+  nome      String
+  email     String?  @unique
+  userId    String?  @unique @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user               User?              @relation(fields: [userId], references: [id])
+  teacherBudgets     TeacherBudget[]
+  recoveryActivities RecoveryActivity[]
+
+  @@map("teachers")
+}
+
+// Tesoretti annuali (importati)
+model TeacherBudget {
+  id            String   @id @default(uuid())
+  teacherId     String   @map("teacher_id")
+  schoolYearId  String   @map("school_year_id")
+  minutesWeekly Int      @map("minutes_weekly")
+  minutesAnnual Int      @map("minutes_annual")
+  modulesAnnual Int      @map("modules_annual")
+  minutesUsed   Int      @default(0) @map("minutes_used")
+  modulesUsed   Int      @default(0) @map("modules_used")
+  importDate    DateTime @map("import_date")
+  importSource  String   @map("import_source")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  teacher    Teacher    @relation(fields: [teacherId], references: [id])
+  schoolYear SchoolYear @relation(fields: [schoolYearId], references: [id])
+
+  @@unique([teacherId, schoolYearId])
+  @@map("teacher_budgets")
+}
+
+// Tipologie di recupero (configurabili)
+model RecoveryType {
+  id               String   @id @default(uuid())
+  name             String   @unique
+  description      String?
+  color            String   @default("#3B82F6") // hex color
+  isActive         Boolean  @default(true) @map("is_active")
+  requiresApproval Boolean  @default(false) @map("requires_approval")
+  defaultDuration  Int      @map("default_duration") // minuti
+  createdBy        String   @map("created_by")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  creator            User               @relation(fields: [createdBy], references: [id])
+  recoveryActivities RecoveryActivity[]
+
+  @@map("recovery_types")
+}
+
+// Attività di recupero
+model RecoveryActivity {
+  id                String    @id @default(uuid())
+  teacherId         String    @map("teacher_id")
+  schoolYearId      String    @map("school_year_id")
+  recoveryTypeId    String    @map("recovery_type_id")
+  date              DateTime
+  durationMinutes   Int       @map("duration_minutes")
+  modulesEquivalent Int       @map("modules_equivalent") // calcolato: duration_minutes / 50
+  title             String
+  description       String?
+  status            String    @default("completed") // completed, pending, approved, rejected
+  createdBy         String    @map("created_by")
+  approvedBy        String?   @map("approved_by")
+  approvedAt        DateTime? @map("approved_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  teacher      Teacher      @relation(fields: [teacherId], references: [id])
+  schoolYear   SchoolYear   @relation(fields: [schoolYearId], references: [id])
+  recoveryType RecoveryType @relation(fields: [recoveryTypeId], references: [id])
+  creator      User         @relation(fields: [createdBy], references: [id])
+  approver     User?        @relation("ApprovedBy", fields: [approvedBy], references: [id])
+
+  @@map("recovery_activities")
+}
+
+// Log attività (audit trail)
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  action    String   // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, IMPORT
+  tableName String   @map("table_name")
+  recordId  String?  @map("record_id")
+  oldValues Json?    @map("old_values")
+  newValues Json?    @map("new_values")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("activity_logs")
+}
+
+// Configurazioni sistema
+model SystemConfig {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedBy   String   @map("updated_by")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  updater User @relation(fields: [updatedBy], references: [id])
+
+  @@map("system_configs")
+}
