@@ -3,14 +3,14 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/components/auth/auth-provider'
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { user, loading, signOut } = useAuth()
+  const { user, loading, logout } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function DashboardLayout({
   }, [user, loading, router])
 
   const handleSignOut = async () => {
-    await signOut()
+    await logout()
     router.push('/login')
   }
 
