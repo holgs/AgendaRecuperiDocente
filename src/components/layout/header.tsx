@@ -25,9 +25,11 @@ import { Input } from '@/components/ui/input'
 
 interface HeaderProps {
   onMenuClick: () => void
+  title?: string
+  actions?: React.ReactNode
 }
 
-export function Header({ onMenuClick }: HeaderProps) {
+export function Header({ onMenuClick, title, actions }: HeaderProps) {
   const { user, logout } = useAuth()
   const [notifications] = React.useState(3) // Mock notifications
 
@@ -52,6 +54,13 @@ export function Header({ onMenuClick }: HeaderProps) {
           <Menu className="h-5 w-5" />
         </Button>
         
+        {/* Page title */}
+        {title && (
+          <h1 className="text-lg font-semibold text-foreground hidden sm:block">
+            {title}
+          </h1>
+        )}
+        
         {/* Search */}
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -64,6 +73,13 @@ export function Header({ onMenuClick }: HeaderProps) {
 
       {/* Right section */}
       <div className="flex items-center space-x-4">
+        {/* Page actions */}
+        {actions && (
+          <div className="hidden sm:flex items-center space-x-2">
+            {actions}
+          </div>
+        )}
+
         {/* Quick search mobile */}
         <Button variant="ghost" size="sm" className="md:hidden">
           <Search className="h-4 w-4" />
