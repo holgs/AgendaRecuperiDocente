@@ -3,14 +3,14 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { User as SupabaseUser } from '@supabase/supabase-js'
-import { User, UserRole, hasPermission as checkPermission } from '@/lib/auth'
+import { User, UserRole, hasPermission as checkPermission, Permission } from '@/lib/auth'
 
 interface AuthContextType {
   user: User | null
   loading: boolean
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
-  hasPermission: (resource: string, action: string) => boolean
+  hasPermission: (resource: string, action: Permission['action']) => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
   }
 
-  const hasPermission = (resource: string, action: string) => {
+  const hasPermission = (resource: string, action: Permission['action']) => {
     if (!user) return false
     return checkPermission(user.role, resource, action)
   }
