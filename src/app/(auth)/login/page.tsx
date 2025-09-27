@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/components/auth/auth-provider'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   
-  const { signIn } = useAuth()
+  const { login } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,13 +21,12 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
-    const { error } = await signIn(email, password)
-    
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-    } else {
+    try {
+      await login(email, password)
       router.push('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Errore durante il login')
+      setLoading(false)
     }
   }
 
