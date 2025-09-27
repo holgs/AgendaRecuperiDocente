@@ -19,6 +19,7 @@ import {
   X,
   ChevronDown,
 } from 'lucide-react'
+import { UserRole } from '@/lib/auth'
 
 interface MenuItem {
   title: string
@@ -26,7 +27,7 @@ interface MenuItem {
   icon: React.ComponentType<{ className?: string }>
   badge?: string
   children?: MenuItem[]
-  permissions?: string[]
+  requiredRoles?: UserRole[]
 }
 
 const menuItems: MenuItem[] = [
@@ -42,7 +43,7 @@ const menuItems: MenuItem[] = [
     children: [
       { title: 'Elenco Docenti', href: '/teachers', icon: Users },
       { title: 'Saldi Budget', href: '/teachers/budgets', icon: BarChart3 },
-      { title: 'Import CSV', href: '/teachers/import', icon: FileText, permissions: ['admin'] },
+      { title: 'Import CSV', href: '/teachers/import', icon: FileText, requiredRoles: ['admin'] },
     ],
   },
   {
@@ -59,7 +60,7 @@ const menuItems: MenuItem[] = [
     title: 'Tipologie Recupero',
     href: '/recovery-types',
     icon: Settings,
-    permissions: ['admin'],
+    requiredRoles: ['admin'],
   },
   {
     title: 'Report',
@@ -75,7 +76,7 @@ const menuItems: MenuItem[] = [
     title: 'Impostazioni',
     href: '/settings',
     icon: Settings,
-    permissions: ['admin'],
+    requiredRoles: ['admin'],
   },
 ]
 
@@ -87,7 +88,7 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose, className }: SidebarProps) {
   const pathname = usePathname()
-  const { user, hasPermission } = useAuth()
+  const { user } = useAuth()
   const [expandedItems, setExpandedItems] = React.useState<string[]>([''])
 
   const toggleExpanded = (title: string) => {
@@ -100,10 +101,8 @@ export function Sidebar({ open, onClose, className }: SidebarProps) {
 
   const filterMenuItems = (items: MenuItem[]): MenuItem[] => {
     return items.filter(item => {
-      if (item.permissions) {
-        return item.permissions.some(permission => 
-          hasPermission('*', permission) || user?.role === permission
-        )
+      if (item.requiredRoles) {
+        return user?.role && item.requiredRoles.includes(user.role)
       }
       return true
     }).map(item => ({
