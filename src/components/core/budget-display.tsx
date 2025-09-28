@@ -3,7 +3,7 @@
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { Badge } from '@/components/ui/badge'
+import { Badge, type BadgeProps } from '@/components/ui/badge'
 import {
   PieChart,
   Pie,
@@ -46,6 +46,13 @@ interface BudgetDisplayProps {
   showTrends?: boolean
 }
 
+type StatusInfo = {
+  status: string
+  variant: BadgeProps['variant']
+  icon: React.ComponentType<{ className?: string }>
+  description: string
+}
+
 export function BudgetDisplay({
   budget,
   teacherName,
@@ -85,11 +92,11 @@ export function BudgetDisplay({
     }
   }).reverse()
 
-  const getStatusInfo = () => {
+  const getStatusInfo = (): StatusInfo => {
     if (minutesProgress >= 100) {
       return {
         status: 'Esaurito',
-        color: 'destructive',
+        variant: 'destructive',
         icon: AlertTriangle,
         description: 'Budget completamente utilizzato',
       }
@@ -97,7 +104,7 @@ export function BudgetDisplay({
     if (minutesProgress >= 90) {
       return {
         status: 'Critico',
-        color: 'destructive',
+        variant: 'destructive',
         icon: AlertTriangle,
         description: 'Budget quasi esaurito',
       }
@@ -105,14 +112,14 @@ export function BudgetDisplay({
     if (!isOnTrack) {
       return {
         status: 'Fuori target',
-        color: 'default',
+        variant: 'default',
         icon: TrendingUp,
         description: 'Utilizzo superiore al previsto',
       }
     }
     return {
       status: 'In linea',
-      color: 'secondary',
+      variant: 'secondary',
       icon: TrendingDown,
       description: 'Utilizzo conforme alle previsioni',
     }
@@ -131,7 +138,7 @@ export function BudgetDisplay({
               Budget - {teacherName}
             </CardTitle>
             <div className="flex items-center space-x-2">
-              <Badge variant={statusInfo.color as any} className="flex items-center space-x-1">
+              <Badge variant={statusInfo.variant} className="flex items-center space-x-1">
                 <StatusIcon className="h-3 w-3" />
                 <span>{statusInfo.status}</span>
               </Badge>
