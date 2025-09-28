@@ -49,6 +49,16 @@ npx prisma generate     # Generate Prisma client
 npx prisma db push      # Push schema a Supabase
 ```
 
+### Componenti UI condivisi
+
+- **DataTable** (`src/components/core/data-table.tsx`)
+  - Ricerca globale e gestione visibilità colonne integrate.
+  - Esportazione nativa dei dati visibili in formato CSV, Excel (SheetJS) e PDF (pdfmake) senza necessità di handler esterni.
+  - Proprietà opzionali:
+    - `exportFileName` per impostare il nome base dei file generati.
+    - `enableExport` per disabilitare il selettore di esportazione quando non necessario.
+  - Gestione automatica degli stati di caricamento ed errori durante l'esportazione.
+
 ## Database Schema
 
 Il sistema utilizza Supabase con le seguenti tabelle principali:

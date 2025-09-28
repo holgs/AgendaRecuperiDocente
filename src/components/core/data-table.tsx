@@ -12,6 +12,7 @@ import {
   ColumnFiltersState,
   VisibilityState,
   useReactTable,
+  type Table as ReactTable,
 } from '@tanstack/react-table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -32,12 +33,172 @@ import {
 } from '@/components/ui/select'
 import { ChevronDown, Download, Eye, EyeOff } from 'lucide-react'
 
+type ExportFormat = 'csv' | 'excel' | 'pdf'
+
+type ExportMatrix = string[][]
+
+const formatCellValue = (value: unknown): string => {
+  if (value === null || value === undefined) {
+    return ''
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString()
+  }
+
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value)
+    } catch (error) {
+      console.warn('Impossibile serializzare il valore della cella', error)
+      return ''
+    }
+  }
+
+  return String(value)
+}
+
+const getVisibleTableMatrix = <TData,>(table: ReactTable<TData>): ExportMatrix => {
+  const visibleColumns = table.getVisibleLeafColumns()
+
+  if (!visibleColumns.length) {
+    throw new Error('Nessuna colonna visibile da esportare.')
+  }
+
+  const headerRow = visibleColumns.map((column) => {
+    const header = column.columnDef.header
+
+    if (typeof header === 'string') {
+      return header
+    }
+
+    const meta = column.columnDef.meta as { headerLabel?: string } | undefined
+
+    if (meta?.headerLabel) {
+      return meta.headerLabel
+    }
+
+    return column.id.toString()
+  })
+
+  const dataRows = table.getRowModel().rows.map((row) =>
+    visibleColumns.map((column) => formatCellValue(row.getValue(column.id)))
+  )
+
+  return [headerRow, ...dataRows]
+}
+
+const escapeCsvValue = (value: string): string => {
+  const needsEscaping = /[",\n\r]/.test(value)
+  let escaped = value.replace(/"/g, '""')
+
+  if (needsEscaping) {
+    escaped = `"${escaped}"`
+  }
+
+  return escaped
+}
+
+const matrixToCsv = (matrix: ExportMatrix): string =>
+  matrix.map((row) => row.map(escapeCsvValue).join(',')).join('\n')
+
+const downloadBlob = (blob: Blob, fileName: string) => {
+  const url = window.URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = fileName
+  document.body.appendChild(anchor)
+  anchor.click()
+  document.body.removeChild(anchor)
+  window.URL.revokeObjectURL(url)
+}
+
+const exportTableToCsv = <TData,>(table: ReactTable<TData>, fileName: string) => {
+  if (typeof window === 'undefined') {
+    throw new Error('L\'esportazione è disponibile solo lato client.')
+  }
+
+  const matrix = getVisibleTableMatrix(table)
+  const csvContent = matrixToCsv(matrix)
+  const blob = new Blob([csvContent], {
+    type: 'text/csv;charset=utf-8;',
+  })
+
+  downloadBlob(blob, `${fileName}.csv`)
+}
+
+const exportTableToExcel = async <TData,>(
+  table: ReactTable<TData>,
+  fileName: string
+) => {
+  if (typeof window === 'undefined') {
+    throw new Error('L\'esportazione è disponibile solo lato client.')
+  }
+
+  const matrix = getVisibleTableMatrix(table)
+  const xlsx = await import('xlsx')
+  const worksheet = xlsx.utils.aoa_to_sheet(matrix)
+  const workbook = xlsx.utils.book_new()
+
+  xlsx.utils.book_append_sheet(workbook, worksheet, 'Dati')
+  xlsx.writeFile(workbook, `${fileName}.xlsx`)
+}
+
+const exportTableToPdf = async <TData,>(
+  table: ReactTable<TData>,
+  fileName: string
+) => {
+  if (typeof window === 'undefined') {
+    throw new Error('L\'esportazione è disponibile solo lato client.')
+  }
+
+  const matrix = getVisibleTableMatrix(table)
+  const [headerRow, ...dataRows] = matrix
+
+  const pdfMakeModule = await import('pdfmake/build/pdfmake')
+  const pdfFonts = await import('pdfmake/build/vfs_fonts')
+  const pdfMake = (pdfMakeModule.default ?? pdfMakeModule) as any
+
+  if (!pdfMake.vfs) {
+    const fonts = (pdfFonts.default ?? pdfFonts) as any
+    pdfMake.vfs = fonts.pdfMake.vfs
+  }
+
+  const widths = new Array(headerRow.length).fill('*')
+  const body = [
+    headerRow.map((cell) => ({ text: cell, bold: true })),
+    ...dataRows.map((row) => row.map((cell) => ({ text: cell }))),
+  ]
+
+  pdfMake.createPdf({
+    content: [
+      {
+        table: {
+          headerRows: 1,
+          widths,
+          body,
+        },
+      },
+    ],
+    pageMargins: [40, 60, 40, 60],
+  }).download(`${fileName}.pdf`)
+}
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   searchKey?: string
   searchPlaceholder?: string
-  onExport?: (format: 'csv' | 'excel' | 'pdf') => void
+  /**
+   * Nome di base utilizzato per i file esportati (senza estensione).
+   * @default "export"
+   */
+  exportFileName?: string
+  /**
+   * Mostra il selettore per l'esportazione dei dati.
+   * @default true
+   */
+  enableExport?: boolean
 }
 
 export function DataTable<TData, TValue>({
@@ -45,13 +206,16 @@ export function DataTable<TData, TValue>({
   data,
   searchKey = '',
   searchPlaceholder = 'Cerca...',
-  onExport,
+  exportFileName = 'export',
+  enableExport = true,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [globalFilter, setGlobalFilter] = React.useState('')
-
+  const [isExporting, setIsExporting] = React.useState(false)
+  const [exportError, setExportError] = React.useState<string | null>(null)
+  const [selectedFormat, setSelectedFormat] = React.useState('')
   const table = useReactTable({
     data,
     columns,
@@ -71,6 +235,29 @@ export function DataTable<TData, TValue>({
       globalFilter,
     },
   })
+
+  const handleExport = React.useCallback(
+    async (format: ExportFormat) => {
+      try {
+        setExportError(null)
+        setIsExporting(true)
+
+        if (format === 'csv') {
+          exportTableToCsv(table, exportFileName)
+        } else if (format === 'excel') {
+          await exportTableToExcel(table, exportFileName)
+        } else {
+          await exportTableToPdf(table, exportFileName)
+        }
+      } catch (error) {
+        console.error('Errore durante l\'esportazione della tabella', error)
+        setExportError('Si è verificato un errore durante l\'esportazione.')
+      } finally {
+        setIsExporting(false)
+      }
+    },
+    [exportFileName, table]
+  )
 
   return (
     <div className="space-y-4">
@@ -116,11 +303,24 @@ export function DataTable<TData, TValue>({
           </Select>
 
           {/* Export dropdown */}
-          {onExport && (
-            <Select onValueChange={(format) => onExport(format as 'csv' | 'excel' | 'pdf')}>
-              <SelectTrigger className="w-[120px]">
+          {enableExport && (
+            <Select
+              value={selectedFormat}
+              onValueChange={async (format) => {
+                setSelectedFormat(format)
+                try {
+                  await handleExport(format as ExportFormat)
+                } finally {
+                  setSelectedFormat('')
+                }
+              }}
+              disabled={isExporting}
+            >
+              <SelectTrigger className="w-[150px]" aria-busy={isExporting}>
                 <Download className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Export" />
+                <SelectValue
+                  placeholder={isExporting ? 'Esportazione...' : 'Esporta'}
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="csv">CSV</SelectItem>
@@ -131,6 +331,12 @@ export function DataTable<TData, TValue>({
           )}
         </div>
       </div>
+
+      {exportError && (
+        <p className="text-sm text-destructive" role="alert">
+          {exportError}
+        </p>
+      )}
 
       {/* Tabella */}
       <div className="rounded-md border">
