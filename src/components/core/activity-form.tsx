@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
@@ -14,10 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Calendar, Clock, Save, X } from 'lucide-react'
+import { RichTextEditor } from '@/components/ui/rich-text-editor'
 
 interface RecoveryType {
   id: string
@@ -99,7 +99,11 @@ export function ActivityForm({
 
     const timeout = setTimeout(() => {
       const draftData = form.getValues()
-      localStorage.setItem('activity-draft', JSON.stringify(draftData))
+      const serializedDraft = {
+        ...draftData,
+        description: typeof draftData.description === 'string' ? draftData.description : '',
+      }
+      localStorage.setItem('activity-draft', JSON.stringify(serializedDraft))
       setDraftSaved(true)
       setTimeout(() => setDraftSaved(false), 2000)
     }, 2000)
@@ -117,7 +121,10 @@ export function ActivityForm({
     if (savedDraft && !initialData) {
       try {
         const draftData = JSON.parse(savedDraft)
-        form.reset(draftData)
+        form.reset({
+          ...draftData,
+          description: typeof draftData.description === 'string' ? draftData.description : '',
+        })
       } catch (error) {
         console.error('Error loading draft:', error)
       }
@@ -290,12 +297,23 @@ export function ActivityForm({
           {/* Descrizione */}
           <div className="space-y-2">
             <Label htmlFor="description">Descrizione (opzionale)</Label>
-            <Textarea
-              id="description"
-              placeholder="Inserisci una descrizione dell'attività..."
-              rows={3}
-              {...form.register('description')}
+            <Controller
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <RichTextEditor
+                  value={field.value ?? ''}
+                  onChange={(value) => field.onChange(value ?? '')}
+                  onBlur={field.onBlur}
+                  placeholder="Inserisci una descrizione dell'attività..."
+                />
+              )}
             />
+            {form.formState.errors.description && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.description.message}
+              </p>
+            )}
           </div>
 
           {/* Validazione saldi */}
