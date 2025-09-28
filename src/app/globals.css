@@ -27,6 +27,8 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    --font-geist-sans: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-geist-mono: "Menlo", "Fira Code", "SFMono-Regular", monospace;
   }
 
   .dark {
@@ -89,6 +91,7 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: var(--font-sans);
   }
   
   /* Scrollbar styles */

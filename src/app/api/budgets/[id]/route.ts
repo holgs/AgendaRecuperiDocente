@@ -5,12 +5,16 @@ interface Params {
   id: string;
 }
 
+type RouteContext = {
+  params: Promise<Params>;
+};
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: Params }
+  context: RouteContext
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
 
     const budget = await prisma.teacherBudget.findUnique({
       where: { id },
@@ -62,10 +66,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Params }
+  context: RouteContext
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const body = await request.json();
     const {
       minutesWeekly,
@@ -155,10 +159,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Params }
+  context: RouteContext
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
 
     // Verifica se il budget esiste
     const existingBudget = await prisma.teacherBudget.findUnique({

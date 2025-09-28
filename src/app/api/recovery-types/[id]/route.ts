@@ -5,12 +5,16 @@ interface Params {
   id: string;
 }
 
+type RouteContext = {
+  params: Promise<Params>;
+};
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: Params }
+  context: RouteContext
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
 
     const recoveryType = await prisma.recoveryType.findUnique({
       where: { id },
@@ -63,10 +67,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Params }
+  context: RouteContext
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const body = await request.json();
     const {
       name,
@@ -152,10 +156,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Params }
+  context: RouteContext
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
 
     // Verifica se la tipologia esiste
     const existingType = await prisma.recoveryType.findUnique({

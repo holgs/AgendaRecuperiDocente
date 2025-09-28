@@ -25,18 +25,17 @@ export function MainLayout({
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <Sidebar 
-        open={sidebarOpen} 
-        onOpenChange={setSidebarOpen}
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         className="hidden lg:flex"
       />
-      
+
       {/* Mobile sidebar overlay */}
-      <Sidebar 
-        open={sidebarOpen} 
-        onOpenChange={setSidebarOpen}
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         className="lg:hidden"
-        mobile
       />
 
       {/* Main content */}
