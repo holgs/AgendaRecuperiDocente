@@ -20,8 +20,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Check if supabase is available
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     // Get initial session
     const getInitialSession = async () => {
+      if (!supabase) return // Additional null check for TypeScript
+
       const { data: { session } } = await supabase.auth.getSession()
 
       if (session?.user) {
@@ -49,6 +57,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const fetchUserData = async (supabaseUser: SupabaseUser) => {
+    if (!supabase) {
+      console.error('Supabase client not available')
+      return
+    }
+
     try {
       // Fetch user data from our users table
       const { data, error } = await supabase
@@ -76,6 +89,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const login = async (email: string, password: string) => {
+    if (!supabase) {
+      throw new Error('Authentication not available - Supabase client not configured')
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -87,6 +104,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = async () => {
+    if (!supabase) {
+      throw new Error('Authentication not available - Supabase client not configured')
+    }
+
     const { error } = await supabase.auth.signOut()
     if (error) {
       throw error
