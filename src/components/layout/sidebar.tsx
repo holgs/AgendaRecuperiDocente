@@ -43,7 +43,7 @@ const menuItems: MenuItem[] = [
     children: [
       { title: 'Elenco Docenti', href: '/teachers', icon: Users },
       { title: 'Saldi Budget', href: '/teachers/budgets', icon: BarChart3 },
-      { title: 'Import CSV', href: '/teachers/import', icon: FileText, requiredRoles: ['admin'] },
+      { title: 'Import Tesoretti', href: '/import', icon: FileText, requiredRoles: ['admin'] },
     ],
   },
   {

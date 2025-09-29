@@ -10,6 +10,11 @@ interface ImportRecord {
   modulesAnnual: number;
 }
 
+interface ConflictResolution {
+  teacherId: string;
+  action: 'update' | 'skip' | 'create_new';
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
