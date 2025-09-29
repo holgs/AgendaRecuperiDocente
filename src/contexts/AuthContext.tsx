@@ -23,15 +23,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Check if supabase is available
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const getInitialSession = async () => {
+      if (!supabase) return // Additional null check for TypeScript
+
+      const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
         setUser(session.user as AuthUser)
       }
       setLoading(false)
-    })
+    }
+
+    getInitialSession()
 
     // Listen for auth changes
+    if (!supabase) return // Additional null check for TypeScript
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -47,6 +60,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
+    if (!supabase) {
+      return { error: { message: 'Authentication not available - Supabase client not configured' } }
+    }
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -64,6 +81,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    if (!supabase) {
+      return
+    }
+
     await supabase.auth.signOut()
     setUser(null)
   }
