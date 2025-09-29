@@ -27,16 +27,15 @@ export function MainLayout({
       {/* Sidebar */}
       <Sidebar 
         open={sidebarOpen} 
-        onOpenChange={setSidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         className="hidden lg:flex"
       />
       
       {/* Mobile sidebar overlay */}
       <Sidebar 
         open={sidebarOpen} 
-        onOpenChange={setSidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         className="lg:hidden"
-        mobile
       />
 
       {/* Main content */}
