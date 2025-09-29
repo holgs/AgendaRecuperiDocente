@@ -20,7 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check if supabase is available
+    // Check if supabase is available - prevents build-time errors
     if (!supabase) {
       setLoading(false)
       return
