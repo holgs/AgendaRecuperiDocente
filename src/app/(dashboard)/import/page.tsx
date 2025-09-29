@@ -230,7 +230,7 @@ export default function ImportPage() {
           <FileUpload
             onFileSelect={handleFileSelect}
             onFileRemove={handleFileRemove}
-            selectedFile={selectedFile}
+            selectedFile={selectedFile || undefined}
             disabled={isLoading}
           />
 
