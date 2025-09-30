@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, Save, Calculator, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -199,13 +200,15 @@ export default function NewActivityPage() {
 
       {/* Errors */}
       {errors.length > 0 && (
-        <div className="border-red-200 bg-red-50 border rounded-md p-4">
-          <ul className="list-disc list-inside space-y-1">
-            {errors.map((error, index) => (
-              <li key={index} className="text-red-700">{error}</li>
-            ))}
-          </ul>
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>
+            <ul className="list-disc list-inside space-y-1">
+              {errors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
