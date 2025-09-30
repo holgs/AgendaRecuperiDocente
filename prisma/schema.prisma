@@ -1,162 +1,145 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// Prisma schema file generated from Supabase database introspection
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
-  email     String   @unique @db.VarChar
-  role      String   @default("admin") @db.VarChar
-  name      String?  @db.VarChar
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+model users {
+  id         String   @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  email      String   @unique @db.VarChar
+  role       String   @default("admin") @db.VarChar
+  name       String?  @db.VarChar
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
 
   // Relations
-  teachers              Teacher[]
-  recoveryTypesCreated  RecoveryType[]      @relation("CreatedBy")
-  activitiesCreated     RecoveryActivity[]  @relation("CreatedBy")
-  activitiesApproved    RecoveryActivity[]  @relation("ApprovedBy")
-  activityLogs          ActivityLog[]
-  systemConfigsUpdated SystemConfig[]
-
-  @@map("users")
+  teachers               teachers?
+  recovery_types         recovery_types[]
+  recovery_activities    recovery_activities[] @relation("created_by")
+  recovery_approvals     recovery_activities[] @relation("approved_by")
+  activity_logs          activity_logs[]
+  system_configs         system_configs[]
 }
 
-model SchoolYear {
-  id         String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
-  name       String    @unique @db.VarChar
-  startDate  DateTime  @map("start_date") @db.Timestamptz
-  endDate    DateTime  @map("end_date") @db.Timestamptz
-  isActive   Boolean?  @default(false) @map("is_active")
-  weeksCount Int       @map("weeks_count")
-  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+model teachers {
+  id         String   @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  cognome    String   @db.VarChar
+  nome       String   @db.VarChar
+  email      String?  @unique @db.VarChar
+  user_id    String?  @unique @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
 
   // Relations
-  teacherBudgets     TeacherBudget[]
-  recoveryActivities RecoveryActivity[]
-
-  @@map("school_years")
+  user                users?               @relation(fields: [user_id], references: [id])
+  teacher_budgets     teacher_budgets[]
+  recovery_activities recovery_activities[]
 }
 
-model Teacher {
-  id        String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
-  cognome   String    @db.VarChar
-  nome      String    @db.VarChar
-  email     String?   @unique @db.VarChar
-  userId    String?   @unique @map("user_id") @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+model school_years {
+  id          String   @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  name        String   @unique @db.VarChar
+  start_date  DateTime @db.Timestamptz(6)
+  end_date    DateTime @db.Timestamptz(6)
+  is_active   Boolean? @default(false)
+  weeks_count Int      @db.Integer
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
 
   // Relations
-  user               User?              @relation(fields: [userId], references: [id])
-  teacherBudgets     TeacherBudget[]
-  recoveryActivities RecoveryActivity[]
-
-  @@map("teachers")
+  teacher_budgets     teacher_budgets[]
+  recovery_activities recovery_activities[]
 }
 
-model RecoveryType {
-  id              String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
-  name            String    @unique @db.VarChar
-  description     String?   @db.Text
-  color           String?   @default("#3B82F6") @db.VarChar
-  isActive        Boolean?  @default(true) @map("is_active")
-  requiresApproval Boolean? @default(false) @map("requires_approval")
-  defaultDuration Int       @map("default_duration")
-  createdBy       String    @map("created_by") @db.Uuid
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+model teacher_budgets {
+  id              String   @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  teacher_id      String   @db.Uuid
+  school_year_id  String   @db.Uuid
+  minutes_weekly  Int      @db.Integer
+  minutes_annual  Int      @db.Integer
+  modules_annual  Int      @db.Integer
+  minutes_used    Int?     @default(0) @db.Integer
+  modules_used    Int?     @default(0) @db.Integer
+  import_date     DateTime @db.Timestamptz(6)
+  import_source   String   @db.VarChar
+  created_at      DateTime? @default(now()) @db.Timestamptz(6)
 
   // Relations
-  creator            User               @relation("CreatedBy", fields: [createdBy], references: [id])
-  recoveryActivities RecoveryActivity[]
+  teacher      teachers      @relation(fields: [teacher_id], references: [id])
+  school_year  school_years  @relation(fields: [school_year_id], references: [id])
 
-  @@map("recovery_types")
+  @@unique([teacher_id, school_year_id])
 }
 
-model TeacherBudget {
-  id            String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
-  teacherId     String    @map("teacher_id") @db.Uuid
-  schoolYearId  String    @map("school_year_id") @db.Uuid
-  minutesWeekly Int       @map("minutes_weekly")
-  minutesAnnual Int       @map("minutes_annual")
-  modulesAnnual Int       @map("modules_annual")
-  minutesUsed   Int?      @default(0) @map("minutes_used")
-  modulesUsed   Int?      @default(0) @map("modules_used")
-  importDate    DateTime  @map("import_date") @db.Timestamptz
-  importSource  String    @map("import_source") @db.VarChar
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+model recovery_types {
+  id                String   @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  name              String   @unique @db.VarChar
+  description       String?  @db.Text
+  color             String?  @default("#3B82F6") @db.VarChar
+  is_active         Boolean? @default(true)
+  requires_approval Boolean? @default(false)
+  default_duration  Int      @db.Integer
+  created_by        String   @db.Uuid
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
 
   // Relations
-  teacher    Teacher    @relation(fields: [teacherId], references: [id])
-  schoolYear SchoolYear @relation(fields: [schoolYearId], references: [id])
-
-  @@map("teacher_budgets")
+  creator             users                   @relation(fields: [created_by], references: [id])
+  recovery_activities recovery_activities[]
 }
 
-model RecoveryActivity {
-  id               String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
-  teacherId        String    @map("teacher_id") @db.Uuid
-  schoolYearId     String    @map("school_year_id") @db.Uuid
-  recoveryTypeId   String    @map("recovery_type_id") @db.Uuid
-  date             DateTime  @db.Timestamptz
-  durationMinutes  Int       @map("duration_minutes")
-  modulesEquivalent Int      @map("modules_equivalent")
-  title            String    @db.VarChar
-  description      String?   @db.Text
-  status           String?   @default("completed") @db.VarChar
-  createdBy        String    @map("created_by") @db.Uuid
-  approvedBy       String?   @map("approved_by") @db.Uuid
-  approvedAt       DateTime? @map("approved_at") @db.Timestamptz
-  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+model recovery_activities {
+  id                 String   @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  teacher_id         String   @db.Uuid
+  school_year_id     String   @db.Uuid
+  recovery_type_id   String   @db.Uuid
+  date               DateTime @db.Timestamptz(6)
+  duration_minutes   Int      @db.Integer
+  modules_equivalent Int      @db.Integer
+  title              String   @db.VarChar
+  description        String?  @db.Text
+  status             String?  @default("completed") @db.VarChar
+  created_by         String   @db.Uuid
+  approved_by        String?  @db.Uuid
+  approved_at        DateTime? @db.Timestamptz(6)
+  created_at         DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime? @default(now()) @db.Timestamptz(6)
 
   // Relations
-  teacher      Teacher      @relation(fields: [teacherId], references: [id])
-  schoolYear   SchoolYear   @relation(fields: [schoolYearId], references: [id])
-  recoveryType RecoveryType @relation(fields: [recoveryTypeId], references: [id])
-  creator      User         @relation("CreatedBy", fields: [createdBy], references: [id])
-  approver     User?        @relation("ApprovedBy", fields: [approvedBy], references: [id])
-
-  @@map("recovery_activities")
+  teacher       teachers        @relation(fields: [teacher_id], references: [id])
+  school_year   school_years    @relation(fields: [school_year_id], references: [id])
+  recovery_type recovery_types  @relation(fields: [recovery_type_id], references: [id])
+  creator       users           @relation("created_by", fields: [created_by], references: [id])
+  approver      users?          @relation("approved_by", fields: [approved_by], references: [id])
 }
 
-model ActivityLog {
-  id        String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
-  userId    String    @map("user_id") @db.Uuid
-  action    String    @db.VarChar
-  tableName String    @map("table_name") @db.VarChar
-  recordId  String?   @map("record_id") @db.Uuid
-  oldValues Json?     @map("old_values") @db.JsonB
-  newValues Json?     @map("new_values") @db.JsonB
-  ipAddress String?   @map("ip_address") @db.VarChar
-  userAgent String?   @map("user_agent") @db.Text
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+model activity_logs {
+  id         String   @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  user_id    String   @db.Uuid
+  action     String   @db.VarChar
+  table_name String   @db.VarChar
+  record_id  String?  @db.Uuid
+  old_values Json?    @db.JsonB
+  new_values Json?    @db.JsonB
+  ip_address String?  @db.VarChar
+  user_agent String?  @db.Text
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
 
   // Relations
-  user User @relation(fields: [userId], references: [id])
-
-  @@map("activity_logs")
+  user users @relation(fields: [user_id], references: [id])
 }
 
-model SystemConfig {
+model system_configs {
   id          String   @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
   key         String   @unique @db.VarChar
   value       String   @db.Text
   description String?  @db.Text
-  updatedBy   String   @map("updated_by") @db.Uuid
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  updated_by  String   @db.Uuid
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
 
   // Relations
-  updater User @relation(fields: [updatedBy], references: [id])
-
-  @@map("system_configs")
+  updater users @relation(fields: [updated_by], references: [id])
 }

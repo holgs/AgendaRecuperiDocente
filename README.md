@@ -1,76 +1,51 @@
 # Sistema Tracking Recupero Moduli Docenti
 
-Sistema web modulare per il monitoraggio e tracking delle attività di recupero moduli svolte dai docenti, con gestione utenti autorizzati e configurazione flessibile delle tipologie di recupero.
+Sistema web per il monitoraggio e tracking delle attività di recupero moduli svolte dai docenti.
 
-## Architettura del Sistema
-
-- **Sistema di Calcolo** (esterno): calcola tesoretti da CSV → output: lista docenti con moduli annuali
-- **Sistema di Tracking** (questo repo): importa tesoretti → monitora utilizzo → gestisce saldi
-
-## Tech Stack
+## Stack Tecnologico
 
 - **Framework**: Next.js 14 con App Router
 - **Database**: Supabase (PostgreSQL)
 - **ORM**: Prisma
 - **Auth**: Supabase Authentication
-- **UI**: Tailwind CSS + Shadcn/ui
-- **Deploy**: Vercel
+- **UI**: Tailwind CSS
+- **Language**: TypeScript
 
-## Principi di Design
+## Setup
 
-- **API-First**: tutte le funzioni esposte via REST API
-- **Role-Based**: sistema ruoli espandibile (admin, docente, viewer)
-- **Configurable**: tipologie recupero gestite dinamicamente
-- **Audit Trail**: log completo di tutte le operazioni
-- **Integration Ready**: API per import/export con altri sistemi
+```bash
+# Install dependencies
+npm install
 
-## Core Features
+# Generate Prisma Client
+npx prisma generate
 
-### Phase 1 (MVP)
-- Autenticazione e gestione utenti
-- Import tesoretti da sistema di calcolo
-- Registrazione attività di recupero
-- Dashboard monitoraggio
-- Tipologie recupero configurabili
+# Run development server
+npm run dev
+```
 
-### Phase 2 (Future)
-- Accesso docenti
-- Approval workflows
-- Report avanzati
-- Analytics
-- Mobile responsive
+## Environment Variables
+
+Create a `.env.local` file:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+DATABASE_URL=your_database_url
+```
+
+## API Endpoints
+
+- `GET /api/health` - Health check
+- `GET/POST /api/teachers` - Teachers management
+- `GET /api/budgets` - Get budgets
+- `POST /api/budgets/import` - Import CSV budgets
 
 ## Development
 
 ```bash
-npm run dev              # Next.js development server
-npm run build           # Build per produzione
-npx prisma generate     # Generate Prisma client
-npx prisma db push      # Push schema a Supabase
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run type-check   # TypeScript check
+npm run lint         # ESLint check
 ```
-
-## Database Schema
-
-Il sistema utilizza Supabase con le seguenti tabelle principali:
-- `users` - Utenti e ruoli
-- `teachers` - Anagrafica docenti
-- `teacher_budgets` - Tesoretti annuali importati
-- `recovery_types` - Tipologie recupero configurabili
-- `recovery_activities` - Attività di recupero registrate
-- `activity_logs` - Audit trail completo
-
-## Business Logic
-
-### Calcoli Matematici
-- **Moduli equivalenti**: duration_minutes / 50
-- **Saldi**: minutes_annual - minutes_used ≥ 0
-- **Validazioni**: coerenza date, controllo duplicati
-
-### Sicurezza
-- Row Level Security (RLS) con Supabase
-- Audit trail di tutte le operazioni
-- Separazione permessi per ruolo
-
-## License
-
-Private project for educational institution use.
