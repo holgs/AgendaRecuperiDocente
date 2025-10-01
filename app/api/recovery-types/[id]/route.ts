@@ -70,9 +70,9 @@ export async function PUT(
     const updateData: any = {}
 
     if (validatedData.name !== undefined) updateData.name = validatedData.name
-    if (validatedData.description !== undefined) updateData.description = validatedData.description || null
+    if (validatedData.description !== undefined) updateData.description = validatedData.description ?? null
     if (validatedData.color !== undefined) updateData.color = validatedData.color
-    if (validatedData.default_duration !== undefined) updateData.default_duration = validatedData.default_duration || null
+    if (validatedData.default_duration !== undefined) updateData.default_duration = validatedData.default_duration ?? null
     if (validatedData.requires_approval !== undefined) updateData.requires_approval = validatedData.requires_approval
     if (validatedData.is_active !== undefined) updateData.is_active = validatedData.is_active
 
