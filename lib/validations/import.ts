@@ -29,3 +29,16 @@ export const importResultSchema = z.object({
 })
 
 export type ImportResult = z.infer<typeof importResultSchema>
+
+// Schema per validazione singola riga CSV import attività
+export const csvActivityRowSchema = z.object({
+  cognome: z.string().min(1, 'Cognome docente obbligatorio'),
+  nome: z.string().min(1, 'Nome docente obbligatorio'),
+  data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve essere in formato YYYY-MM-DD'),
+  tipologia: z.string().min(1, 'Tipologia obbligatoria'),
+  durata: z.number().int().positive('Durata deve essere positiva'),
+  titolo: z.string().min(1, 'Titolo obbligatorio'),
+  descrizione: z.string().optional(),
+})
+
+export type CsvActivityRow = z.infer<typeof csvActivityRowSchema>
