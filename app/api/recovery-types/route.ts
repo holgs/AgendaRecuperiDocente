@@ -7,7 +7,7 @@ const recoveryTypeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Invalid color format'),
-  default_duration: z.number().int().min(1).max(300).optional(),
+  default_duration: z.number().int().min(1).max(300),
   requires_approval: z.boolean().default(false),
   is_active: z.boolean().default(true)
 })
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         name: validatedData.name,
         description: validatedData.description ?? null,
         color: validatedData.color,
-        default_duration: validatedData.default_duration ?? null,
+        default_duration: validatedData.default_duration,
         requires_approval: validatedData.requires_approval,
         is_active: validatedData.is_active,
         created_by: user.id
