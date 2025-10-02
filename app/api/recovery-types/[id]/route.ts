@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+
+export const dynamic = 'force-dynamic'
 
 const updateRecoveryTypeSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Invalid color format').optional(),
-  default_duration: z.number().int().min(1).max(300).optional(),
+  default_duration: z.number().int().min(1).max(300).nullable().optional(),
   requires_approval: z.boolean().optional(),
   is_active: z.boolean().optional()
 })
@@ -26,22 +27,30 @@ export async function GET(
 
     const { id } = await params
 
-    const recoveryType = await prisma.recovery_types.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: {
-            recovery_activities: true
-          }
-        }
-      }
-    })
+    const { data: recoveryType, error: typeError } = await supabase
+      .from('recovery_types')
+      .select('*')
+      .eq('id', id)
+      .single()
 
-    if (!recoveryType) {
+    if (typeError || !recoveryType) {
       return NextResponse.json({ error: 'Recovery type not found' }, { status: 404 })
     }
 
-    return NextResponse.json(recoveryType)
+    // Get activity count
+    const { count } = await supabase
+      .from('recovery_activities')
+      .select('*', { count: 'exact', head: true })
+      .eq('recovery_type_id', id)
+
+    const typeWithCount = {
+      ...recoveryType,
+      _count: {
+        recovery_activities: count || 0
+      }
+    }
+
+    return NextResponse.json(typeWithCount)
   } catch (error) {
     console.error('Error fetching recovery type:', error)
     return NextResponse.json(
@@ -72,14 +81,20 @@ export async function PUT(
     if (validatedData.name !== undefined) updateData.name = validatedData.name
     if (validatedData.description !== undefined) updateData.description = validatedData.description ?? null
     if (validatedData.color !== undefined) updateData.color = validatedData.color
-    if (validatedData.default_duration !== undefined) updateData.default_duration = validatedData.default_duration
+    if (validatedData.default_duration !== undefined) updateData.default_duration = validatedData.default_duration ?? null
     if (validatedData.requires_approval !== undefined) updateData.requires_approval = validatedData.requires_approval
     if (validatedData.is_active !== undefined) updateData.is_active = validatedData.is_active
 
-    const recoveryType = await prisma.recovery_types.update({
-      where: { id },
-      data: updateData
-    })
+    const { data: recoveryType, error: updateError } = await supabase
+      .from('recovery_types')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (updateError) {
+      throw updateError
+    }
 
     return NextResponse.json(recoveryType)
   } catch (error) {
@@ -113,11 +128,12 @@ export async function DELETE(
     const { id } = await params
 
     // Check if recovery type is being used in any activities
-    const activityCount = await prisma.recovery_activities.count({
-      where: { recovery_type_id: id }
-    })
+    const { count: activityCount } = await supabase
+      .from('recovery_activities')
+      .select('*', { count: 'exact', head: true })
+      .eq('recovery_type_id', id)
 
-    if (activityCount > 0) {
+    if (activityCount && activityCount > 0) {
       return NextResponse.json(
         {
           error: 'Cannot delete recovery type in use',
@@ -127,9 +143,14 @@ export async function DELETE(
       )
     }
 
-    await prisma.recovery_types.delete({
-      where: { id }
-    })
+    const { error: deleteError } = await supabase
+      .from('recovery_types')
+      .delete()
+      .eq('id', id)
+
+    if (deleteError) {
+      throw deleteError
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

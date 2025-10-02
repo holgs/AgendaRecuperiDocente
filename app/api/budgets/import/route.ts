@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     // Process each valid row using Supabase client
     for (const row of parseResult.data) {
       try {
-        const { cognome, nome } = splitDocenteName(row.docente)
+        const { cognome, nome, email } = splitDocenteName(row.docente)
 
         // Find or create teacher using Supabase
         const { data: existingTeacher } = await supabase
@@ -111,7 +111,8 @@ export async function POST(request: NextRequest) {
             .from('teachers')
             .insert({
               cognome,
-              nome
+              nome,
+              email
             })
             .select()
             .single()
@@ -120,6 +121,12 @@ export async function POST(request: NextRequest) {
             throw new Error(`Failed to create teacher: ${teacherError.message}`)
           }
           teacher = newTeacher
+        } else if (!teacher.email) {
+          // Update existing teacher with generated email if missing
+          await supabase
+            .from('teachers')
+            .update({ email })
+            .eq('id', teacher.id)
         }
 
         // Check if budget already exists

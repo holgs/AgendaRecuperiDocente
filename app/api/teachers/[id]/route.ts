@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
+
+const updateTeacherSchema = z.object({
+  cognome: z.string().min(1, 'Cognome obbligatorio').optional(),
+  nome: z.string().min(1, 'Nome obbligatorio').optional(),
+  email: z.string().email('Email non valida').optional(),
+})
 
 export async function GET(
   request: NextRequest,
@@ -133,6 +140,68 @@ export async function GET(
     console.error('Error fetching teacher details:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const supabase = await createClient()
+
+    // Check authentication
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const teacherId = params.id
+    const body = await request.json()
+    const validatedData = updateTeacherSchema.parse(body)
+
+    // Build update object with only provided fields
+    const updateData: any = {}
+    if (validatedData.cognome !== undefined) updateData.cognome = validatedData.cognome
+    if (validatedData.nome !== undefined) updateData.nome = validatedData.nome
+    if (validatedData.email !== undefined) updateData.email = validatedData.email
+
+    // Update teacher
+    const { data: updatedTeacher, error: updateError } = await supabase
+      .from('teachers')
+      .update(updateData)
+      .eq('id', teacherId)
+      .select()
+      .single()
+
+    if (updateError) {
+      throw updateError
+    }
+
+    if (!updatedTeacher) {
+      return NextResponse.json(
+        { error: 'Teacher not found' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json(updatedTeacher)
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation error', details: error.errors },
+        { status: 400 }
+      )
+    }
+
+    console.error('Error updating teacher:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     )
   }
