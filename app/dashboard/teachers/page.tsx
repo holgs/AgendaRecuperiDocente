@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Plus, Loader2, Search } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { TeacherEditDialog } from "@/components/teachers/teacher-edit-dialog"
 
 type TeacherWithBudget = {
   id: string
@@ -142,12 +143,13 @@ export default function TeachersPage() {
               <TableHead className="text-right">Moduli Usati</TableHead>
               <TableHead className="text-right">Moduli Disponibili</TableHead>
               <TableHead className="text-right">Utilizzo</TableHead>
+              <TableHead className="text-right">Azioni</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredTeachers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-10">
                   {searchQuery ? 'Nessun docente trovato' : 'Nessun docente registrato'}
                 </TableCell>
               </TableRow>
@@ -178,6 +180,17 @@ export default function TeachersPage() {
                     ) : (
                       <Badge variant="secondary">N/A</Badge>
                     )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <TeacherEditDialog
+                      teacher={{
+                        id: teacher.id,
+                        cognome: teacher.cognome,
+                        nome: teacher.nome,
+                        email: teacher.email,
+                      }}
+                      onSuccess={fetchTeachers}
+                    />
                   </TableCell>
                 </TableRow>
               ))
