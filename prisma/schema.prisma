@@ -100,9 +100,11 @@ model recovery_activities {
   date               DateTime @db.Timestamptz(6)
   duration_minutes   Int      @db.Integer
   modules_equivalent Int      @db.Integer
+  module_number      Int?     @db.Integer
+  class_name         String?  @db.VarChar
   title              String   @db.VarChar
   description        String?  @db.Text
-  status             String?  @default("completed") @db.VarChar
+  status             String?  @default("planned") @db.VarChar
   created_by         String   @db.Uuid
   approved_by        String?  @db.Uuid
   approved_at        DateTime? @db.Timestamptz(6)
