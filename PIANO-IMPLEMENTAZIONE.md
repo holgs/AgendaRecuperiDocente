@@ -170,8 +170,8 @@ model RecoveryActivity {
 2. ✅ **Migration DB** - Completata su Supabase
 3. ✅ **Dashboard con dati reali** (quick win) - Completata
 4. ✅ **Lista docenti** (semplice) - Completata
-5. ⏳ **Dettaglio docente** (medio) - Prossimo
-6. ⏳ **Calendario settimanale** (complesso)
+5. ✅ **Dettaglio docente** (medio) - Completata
+6. ⏳ **Calendario settimanale** (complesso) - Prossimo
 7. ⏳ **Calendario mensile** (estensione)
 8. ⏳ **Drag & Drop** (avanzato)
 9. ⏳ **Vista dashboard settimanale** (finale)
@@ -179,6 +179,27 @@ model RecoveryActivity {
 ---
 
 ## 🔄 CHANGELOG
+
+### 2025-10-02 - Sessione 5: Pagina dettaglio docente
+- ✅ Creato API endpoint `/api/teachers/[id]`:
+  - Fetch dati docente, budget e attività per anno attivo
+  - Calcolo statistiche attività: da pianificare, pianificati, completati
+  - JOIN con recovery_types per info tipologie
+- ✅ Creato componente `TeacherDetailCard`:
+  - Progress bar utilizzo complessivo con percentuale
+  - Grid 4 statistiche: Moduli Annuali, Da Pianificare, Pianificati, Recuperati
+  - Highlight moduli disponibili con conversione minuti
+  - Badge colorati (verde/giallo/rosso) per percentuale utilizzo
+- ✅ Creata pagina `/dashboard/teachers/[id]`:
+  - Header con nome, email, anno attivo
+  - Card riepilogo budget
+  - Tabella attività (data, modulo, tipo, classe, titolo, durata, stato)
+  - Badge stato (Recuperato/Pianificato/Annullato)
+  - Empty state con CTA "Inizia a Pianificare"
+  - Back button verso lista docenti
+  - Button "Pianifica Recuperi" → calendario
+- ✅ Creata pagina `/dashboard/teachers/[id]/calendar` (placeholder)
+- ✅ Commit: 7b5c4bf
 
 ### 2025-10-02 - Sessione 4: Debug autenticazione
 - ✅ Risolto problema redirect loop dopo login:
