@@ -60,8 +60,8 @@ export default function LoginPage() {
           description: "Benvenuto nel sistema di tracking recuperi",
         })
 
-        router.push("/dashboard")
-        router.refresh()
+        // Force full page reload to ensure server-side session sync
+        window.location.href = "/dashboard"
       }
     } catch (error: any) {
       console.error("Login error:", error)

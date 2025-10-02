@@ -180,6 +180,16 @@ model RecoveryActivity {
 
 ## 🔄 CHANGELOG
 
+### 2025-10-02 - Sessione 4: Debug autenticazione
+- ✅ Risolto problema redirect loop dopo login:
+  - Modificato `app/login/page.tsx` per usare `window.location.href` invece di `router.push()`
+  - Aggiunto redirect esplicito in `lib/supabase/middleware.ts`:
+    - Redirect a /dashboard se autenticato su /login
+    - Redirect a /login se non autenticato su /dashboard
+  - Garantisce sincronizzazione cookie server-side dopo login
+  - Elimina stato "caricamento infinito"
+- ✅ Commit: 1ce9cd9
+
 ### 2025-10-02 - Sessione 3: Lista docenti con budgets
 - ✅ Creato API endpoint `/api/teachers/list-with-budgets`:
   - JOIN teachers con teacher_budgets per anno attivo
