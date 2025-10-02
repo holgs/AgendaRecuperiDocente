@@ -169,8 +169,8 @@ model RecoveryActivity {
 1. ✅ **Database & API** (base) - Schema aggiornato
 2. ✅ **Migration DB** - Completata su Supabase
 3. ✅ **Dashboard con dati reali** (quick win) - Completata
-4. 🔄 **Lista docenti** (semplice) - In corso
-5. ⏳ **Dettaglio docente** (medio)
+4. ✅ **Lista docenti** (semplice) - Completata
+5. ⏳ **Dettaglio docente** (medio) - Prossimo
 6. ⏳ **Calendario settimanale** (complesso)
 7. ⏳ **Calendario mensile** (estensione)
 8. ⏳ **Drag & Drop** (avanzato)
@@ -179,6 +179,20 @@ model RecoveryActivity {
 ---
 
 ## 🔄 CHANGELOG
+
+### 2025-10-02 - Sessione 3: Lista docenti con budgets
+- ✅ Creato API endpoint `/api/teachers/list-with-budgets`:
+  - JOIN teachers con teacher_budgets per anno attivo
+  - Campi calcolati: modulesAvailable, percentageUsed
+  - Ordinamento per cognome
+- ✅ Aggiornata pagina `/dashboard/teachers`:
+  - Client component con fetch da nuova API
+  - Tabella con 7 colonne: Cognome, Nome, Email, Moduli (Annuali/Usati/Disponibili), Utilizzo%
+  - Search bar con filtro real-time su cognome/nome/email
+  - Badge colorati per percentuale utilizzo (verde/giallo/rosso)
+  - Click su riga → navigazione a dettaglio docente
+  - Loading state e error handling
+- ✅ Commit: 31998f1
 
 ### 2025-10-02 - Sessione 2: Dashboard con dati reali
 - ✅ Creato API endpoint `/api/reports/overview` con statistiche reali
