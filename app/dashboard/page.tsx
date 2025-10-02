@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -12,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useToast } from "@/components/ui/use-toast"
-import { Users, BookOpen, Activity, TrendingUp, Loader2 } from "lucide-react"
+import { Users, BookOpen, Activity, TrendingUp, Loader2, Upload } from "lucide-react"
 import { calculatePercentageUsed } from "@/lib/utils"
 
 type DashboardData = {
@@ -98,11 +100,19 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Panoramica generale del sistema tracking recuperi
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Panoramica generale del sistema tracking recuperi
+          </p>
+        </div>
+        <Link href="/dashboard/import">
+          <Button>
+            <Upload className="mr-2 h-4 w-4" />
+            Importa Tesoretti
+          </Button>
+        </Link>
       </div>
 
       {/* Stats Cards */}
