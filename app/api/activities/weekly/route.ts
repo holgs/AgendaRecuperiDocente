@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -33,37 +32,34 @@ export async function GET(request: NextRequest) {
     endDate.setHours(23, 59, 59, 999)
 
     // Get active school year
-    const activeYear = await prisma.school_years.findFirst({
-      where: { is_active: true }
-    })
+    const { data: activeYear, error: yearError } = await supabase
+      .from('school_years')
+      .select('*')
+      .eq('is_active', true)
+      .single()
 
-    if (!activeYear) {
+    if (yearError || !activeYear) {
       return NextResponse.json({
         error: 'No active school year found'
       }, { status: 404 })
     }
 
-    // Get activities for the week
-    const activities = await prisma.recovery_activities.findMany({
-      where: {
-        school_year_id: activeYear.id,
-        date: {
-          gte: startDate,
-          lte: endDate
-        }
-      },
-      include: {
-        teacher: true,
-        recovery_type: true
-      },
-      orderBy: [
-        { date: 'asc' },
-        { module_number: 'asc' }
-      ]
-    })
+    // Get activities for the week with teacher and recovery_type
+    const { data: activities, error: activitiesError } = await supabase
+      .from('recovery_activities')
+      .select(`
+        *,
+        teacher:teachers(id, nome, cognome, email),
+        recovery_type:recovery_types(id, name, color)
+      `)
+      .eq('school_year_id', activeYear.id)
+      .gte('date', startDate.toISOString())
+      .lte('date', endDate.toISOString())
+      .order('date', { ascending: true })
+      .order('module_number', { ascending: true })
 
     return NextResponse.json({
-      activities,
+      activities: activities || [],
       weekStart: startDate.toISOString(),
       weekEnd: endDate.toISOString()
     })

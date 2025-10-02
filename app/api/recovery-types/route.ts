@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+
+export const dynamic = 'force-dynamic'
 
 const recoveryTypeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Invalid color format'),
-  default_duration: z.number().int().min(1).max(300),
+  default_duration: z.number().int().min(1).max(300).nullable().optional(),
   requires_approval: z.boolean().default(false),
   is_active: z.boolean().default(true)
 })
@@ -25,32 +26,42 @@ export async function GET(request: NextRequest) {
     const activeOnly = searchParams.get('activeOnly') === 'true'
     const search = searchParams.get('search')
 
-    const where: any = {}
+    let query = supabase
+      .from('recovery_types')
+      .select('*')
 
     if (activeOnly) {
-      where.is_active = true
+      query = query.eq('is_active', true)
     }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } }
-      ]
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
     }
 
-    const recoveryTypes = await prisma.recovery_types.findMany({
-      where,
-      orderBy: { created_at: 'desc' },
-      include: {
-        _count: {
-          select: {
-            recovery_activities: true
+    const { data: recoveryTypes, error: typesError } = await query.order('created_at', { ascending: false })
+
+    if (typesError) {
+      throw typesError
+    }
+
+    // Get activity counts for each type
+    const typesWithCounts = await Promise.all(
+      (recoveryTypes || []).map(async (type) => {
+        const { count } = await supabase
+          .from('recovery_activities')
+          .select('*', { count: 'exact', head: true })
+          .eq('recovery_type_id', type.id)
+
+        return {
+          ...type,
+          _count: {
+            recovery_activities: count || 0
           }
         }
-      }
-    })
+      })
+    )
 
-    return NextResponse.json(recoveryTypes)
+    return NextResponse.json(typesWithCounts)
   } catch (error) {
     console.error('Error fetching recovery types:', error)
     return NextResponse.json(
@@ -72,17 +83,23 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = recoveryTypeSchema.parse(body)
 
-    const recoveryType = await prisma.recovery_types.create({
-      data: {
+    const { data: recoveryType, error: createError } = await supabase
+      .from('recovery_types')
+      .insert({
         name: validatedData.name,
         description: validatedData.description ?? null,
         color: validatedData.color,
-        default_duration: validatedData.default_duration,
+        default_duration: validatedData.default_duration ?? null,
         requires_approval: validatedData.requires_approval,
         is_active: validatedData.is_active,
         created_by: user.id
-      }
-    })
+      })
+      .select()
+      .single()
+
+    if (createError) {
+      throw createError
+    }
 
     return NextResponse.json(recoveryType, { status: 201 })
   } catch (error) {
