@@ -1,17 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -22,12 +16,6 @@ import {
 } from "@/components/ui/table"
 import { useToast } from "@/components/ui/use-toast"
 import { Upload, FileCheck, AlertCircle, Loader2, CheckCircle2, X } from "lucide-react"
-
-type SchoolYear = {
-  id: string
-  name: string
-  is_active: boolean
-}
 
 type PreviewRow = {
   docente: string
@@ -65,32 +53,41 @@ export default function ImportPage() {
   const [isUploading, setIsUploading] = useState(false)
   const [isDragActive, setIsDragActive] = useState(false)
   const [result, setResult] = useState<ImportResult | null>(null)
-  const [schoolYears, setSchoolYears] = useState<SchoolYear[]>([])
-  const [selectedYearId, setSelectedYearId] = useState<string>("")
-  const [isLoadingYears, setIsLoadingYears] = useState(true)
+  const [schoolYear, setSchoolYear] = useState<string>("")
+  const [yearError, setYearError] = useState<string>("")
 
-  // Fetch school years on mount
-  useEffect(() => {
-    async function fetchSchoolYears() {
-      try {
-        const response = await fetch("/api/school-years")
-        if (response.ok) {
-          const years = await response.json()
-          setSchoolYears(years)
-          // Select active year by default
-          const activeYear = years.find((y: SchoolYear) => y.is_active)
-          if (activeYear) {
-            setSelectedYearId(activeYear.id)
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching school years:", error)
-      } finally {
-        setIsLoadingYears(false)
-      }
+  function validateYearFormat(value: string): boolean {
+    // Format: YYYY-YY (es. 2024-25)
+    const regex = /^\d{4}-\d{2}$/
+    if (!regex.test(value)) {
+      setYearError("Formato non valido. Usa YYYY-YY (es. 2024-25)")
+      return false
     }
-    fetchSchoolYears()
-  }, [])
+
+    const [startYear, endYearShort] = value.split("-")
+    const startYearNum = parseInt(startYear)
+    const endYearShort2Digits = parseInt(endYearShort)
+    const expectedEndYear = (startYearNum + 1) % 100
+
+    if (endYearShort2Digits !== expectedEndYear) {
+      setYearError("L'anno finale deve essere successivo all'anno iniziale")
+      return false
+    }
+
+    setYearError("")
+    return true
+  }
+
+  function handleYearChange(value: string) {
+    setSchoolYear(value)
+    if (value.length === 7) {
+      validateYearFormat(value)
+    } else if (value.length > 7) {
+      setYearError("Formato troppo lungo")
+    } else {
+      setYearError("")
+    }
+  }
 
   function handleDragEnter(e: React.DragEvent) {
     e.preventDefault()
@@ -182,11 +179,11 @@ export default function ImportPage() {
       return
     }
 
-    if (!selectedYearId) {
+    if (!schoolYear || !validateYearFormat(schoolYear)) {
       toast({
         variant: "destructive",
         title: "Errore",
-        description: "Seleziona un anno scolastico",
+        description: "Inserisci un anno scolastico valido (es. 2024-25)",
       })
       return
     }
@@ -196,7 +193,7 @@ export default function ImportPage() {
     try {
       const formData = new FormData()
       formData.append("file", file)
-      formData.append("schoolYearId", selectedYearId)
+      formData.append("schoolYearName", schoolYear)
 
       const response = await fetch("/api/budgets/import", {
         method: "POST",
@@ -257,25 +254,25 @@ export default function ImportPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* School Year Selector */}
+            {/* School Year Input */}
             <div className="space-y-2">
               <Label htmlFor="school-year">Anno Scolastico</Label>
-              <Select
-                value={selectedYearId}
-                onValueChange={setSelectedYearId}
-                disabled={isLoadingYears || isUploading}
-              >
-                <SelectTrigger id="school-year">
-                  <SelectValue placeholder="Seleziona anno scolastico" />
-                </SelectTrigger>
-                <SelectContent>
-                  {schoolYears.map((year) => (
-                    <SelectItem key={year.id} value={year.id}>
-                      {year.name} {year.is_active && "(Attivo)"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                id="school-year"
+                type="text"
+                placeholder="2024-25"
+                value={schoolYear}
+                onChange={(e) => handleYearChange(e.target.value)}
+                disabled={isUploading}
+                maxLength={7}
+                className={yearError ? "border-red-500" : ""}
+              />
+              {yearError && (
+                <p className="text-sm text-red-500">{yearError}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Formato: YYYY-YY (es. 2024-25)
+              </p>
             </div>
 
             {/* Drag & Drop Area */}
@@ -330,7 +327,7 @@ export default function ImportPage() {
 
             <Button
               onClick={handleImport}
-              disabled={!file || !selectedYearId || isUploading}
+              disabled={!file || !schoolYear || !!yearError || isUploading}
               className="w-full"
             >
               {isUploading ? (
@@ -427,6 +424,7 @@ export default function ImportPage() {
                 <li>• I docenti vengono creati automaticamente</li>
                 <li>• I tesoretti esistenti vengono sovrascritti</li>
                 <li>• I moduli durano 50 minuti</li>
+                <li>• L&apos;anno scolastico viene creato automaticamente se non esiste</li>
               </ul>
             </div>
 

@@ -15,23 +15,59 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const schoolYearId = formData.get('schoolYearId') as string
+    const schoolYearName = formData.get('schoolYearName') as string
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    if (!schoolYearId) {
-      return NextResponse.json({ error: 'School year ID required' }, { status: 400 })
+    if (!schoolYearName) {
+      return NextResponse.json({ error: 'School year name required' }, { status: 400 })
     }
 
-    // Verify school year exists
-    const schoolYear = await prisma.school_years.findUnique({
-      where: { id: schoolYearId }
+    // Validate school year format (YYYY-YY)
+    const yearRegex = /^\d{4}-\d{2}$/
+    if (!yearRegex.test(schoolYearName)) {
+      return NextResponse.json({ error: 'Invalid school year format. Use YYYY-YY (e.g. 2024-25)' }, { status: 400 })
+    }
+
+    // Find or create school year
+    let schoolYear = await prisma.school_years.findFirst({
+      where: { name: schoolYearName }
     })
 
     if (!schoolYear) {
-      return NextResponse.json({ error: 'School year not found' }, { status: 404 })
+      // Extract start and end year from name (e.g., "2024-25" -> start: 2024, end: 2025)
+      const [startYearStr, endYearShort] = schoolYearName.split('-')
+      const startYear = parseInt(startYearStr)
+      const endYear = parseInt(`${startYearStr.substring(0, 2)}${endYearShort}`)
+
+      // Create dates (September 1st to August 31st)
+      const startDate = new Date(startYear, 8, 1) // September is month 8 (0-indexed)
+      const endDate = new Date(endYear, 7, 31) // August is month 7
+
+      // Calculate weeks (approximately 36 weeks in a school year)
+      const weeksCount = 36
+
+      schoolYear = await prisma.school_years.create({
+        data: {
+          name: schoolYearName,
+          start_date: startDate,
+          end_date: endDate,
+          weeks_count: weeksCount,
+          is_active: true // Set as active by default
+        }
+      })
+
+      // Deactivate all other school years
+      await prisma.school_years.updateMany({
+        where: {
+          id: { not: schoolYear.id }
+        },
+        data: {
+          is_active: false
+        }
+      })
     }
 
     // Read CSV file content
@@ -74,7 +110,7 @@ export async function POST(request: NextRequest) {
         const existingBudget = await prisma.teacher_budgets.findFirst({
           where: {
             teacher_id: teacher.id,
-            school_year_id: schoolYearId
+            school_year_id: schoolYear.id
           }
         })
 
@@ -95,7 +131,7 @@ export async function POST(request: NextRequest) {
           await prisma.teacher_budgets.create({
             data: {
               teacher_id: teacher.id,
-              school_year_id: schoolYearId,
+              school_year_id: schoolYear.id,
               minutes_weekly: row.minutiSettimanali,
               minutes_annual: row.tesorettoAnnuale,
               modules_annual: row.moduliAnnui,
