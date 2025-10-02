@@ -15,16 +15,16 @@ import {
 } from "@/components/ui/table"
 import { useToast } from "@/components/ui/use-toast"
 import { Users, BookOpen, Activity, TrendingUp, Loader2, Upload } from "lucide-react"
-import { calculatePercentageUsed } from "@/lib/utils"
 
 type DashboardData = {
-  teachersCount: number
-  totalModules: number
-  usedModules: number
-  avgPercentage: number
-  activitiesCount: number
-  budgets: any[]
-  currentSchoolYear: any
+  totalTeachers: number
+  modulesToPlan: number
+  modulesPlanned: number
+  modulesCompleted: number
+  activitiesPlanned: number
+  activitiesCompleted: number
+  weeklyActivities: any[]
+  activeYear: any
 }
 
 export default function DashboardPage() {
@@ -38,45 +38,27 @@ export default function DashboardPage() {
 
   async function fetchDashboardData() {
     try {
-      const [teachersRes, schoolYearsRes, budgetsRes] = await Promise.all([
-        fetch('/api/teachers'),
-        fetch('/api/school-years'),
-        fetch('/api/budgets')
+      const [overviewRes, weeklyRes] = await Promise.all([
+        fetch('/api/reports/overview'),
+        fetch('/api/activities/weekly')
       ])
 
-      const teachers = teachersRes.ok ? await teachersRes.json() : []
-      const schoolYears = schoolYearsRes.ok ? await schoolYearsRes.json() : []
-      const budgets = budgetsRes.ok ? await budgetsRes.json() : []
-
-      // Fetch activities separately to handle potential errors
-      let activities = []
-      try {
-        const activitiesRes = await fetch('/api/activities')
-        if (activitiesRes.ok) {
-          activities = await activitiesRes.json()
-        }
-      } catch (error) {
-        console.log('Activities not available yet')
+      if (!overviewRes.ok) {
+        throw new Error('Failed to fetch overview data')
       }
 
-      const currentYear = schoolYears.find((y: any) => y.is_active)
-      const totalModules = budgets.reduce((sum: number, b: any) => sum + (b.modules_annual || 0), 0)
-      const usedModules = budgets.reduce((sum: number, b: any) => sum + (b.modules_used || 0), 0)
-      const avgPercentage = budgets.length
-        ? budgets.reduce((sum: number, b: any) => {
-            const used = calculatePercentageUsed(b.minutes_used || 0, b.minutes_annual || 0)
-            return sum + used
-          }, 0) / budgets.length
-        : 0
+      const overviewData = await overviewRes.json()
+      const weeklyData = weeklyRes.ok ? await weeklyRes.json() : { activities: [] }
 
       setData({
-        teachersCount: teachers.length,
-        totalModules,
-        usedModules,
-        avgPercentage: Number(avgPercentage.toFixed(1)),
-        activitiesCount: activities.length,
-        budgets: budgets.slice(0, 10),
-        currentSchoolYear: currentYear
+        totalTeachers: overviewData.overview.totalTeachers,
+        modulesToPlan: overviewData.overview.modulesToPlan,
+        modulesPlanned: overviewData.overview.modulesPlanned,
+        modulesCompleted: overviewData.overview.modulesCompleted,
+        activitiesPlanned: overviewData.overview.activitiesPlanned,
+        activitiesCompleted: overviewData.overview.activitiesCompleted,
+        weeklyActivities: weeklyData.activities || [],
+        activeYear: overviewData.activeYear
       })
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
@@ -125,7 +107,7 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.teachersCount}</div>
+            <div className="text-2xl font-bold">{data.totalTeachers}</div>
             <p className="text-xs text-muted-foreground">
               Docenti registrati nel sistema
             </p>
@@ -135,14 +117,14 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Moduli Disponibili
+              Da Pianificare
             </CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.totalModules.toFixed(1)}</div>
+            <div className="text-2xl font-bold">{data.modulesToPlan.toFixed(1)}</div>
             <p className="text-xs text-muted-foreground">
-              Totale moduli annuali assegnati
+              Moduli ancora da pianificare
             </p>
           </CardContent>
         </Card>
@@ -150,14 +132,14 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Utilizzo Medio
+              Pianificati
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.avgPercentage}%</div>
+            <div className="text-2xl font-bold">{data.modulesPlanned.toFixed(1)}</div>
             <p className="text-xs text-muted-foreground">
-              Percentuale media di utilizzo
+              {data.activitiesPlanned} attività pianificate
             </p>
           </CardContent>
         </Card>
@@ -165,70 +147,78 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Attività Registrate
+              Recuperati
             </CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.activitiesCount}</div>
+            <div className="text-2xl font-bold">{data.modulesCompleted.toFixed(1)}</div>
             <p className="text-xs text-muted-foreground">
-              Attività di recupero totali
+              {data.activitiesCompleted} attività completate
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Teachers Budget */}
+      {/* Weekly Activities */}
       <Card>
         <CardHeader>
-          <CardTitle>Tesoretti Docenti</CardTitle>
+          <CardTitle>Attività Questa Settimana</CardTitle>
           <CardDescription>
-            Ultimi tesoretti importati o aggiornati
+            Riepilogo attività pianificate e completate per la settimana corrente
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {data.budgets.length === 0 ? (
+          {data.weeklyActivities.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <BookOpen className="h-10 w-10 text-muted-foreground mb-4" />
+              <Activity className="h-10 w-10 text-muted-foreground mb-4" />
               <p className="text-sm text-muted-foreground">
-                Nessun tesoretto trovato. Inizia importando i dati dei docenti.
+                Nessuna attività programmata per questa settimana.
               </p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Modulo</TableHead>
                   <TableHead>Docente</TableHead>
-                  <TableHead>Moduli Annuali</TableHead>
-                  <TableHead>Moduli Utilizzati</TableHead>
-                  <TableHead>Moduli Disponibili</TableHead>
-                  <TableHead>Utilizzo</TableHead>
+                  <TableHead>Attività</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Stato</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.budgets.map((budget) => {
-                  const teacher = budget.teachers as any
-                  const modulesRemaining = (budget.modules_annual || 0) - (budget.modules_used || 0)
-                  const percentageUsed = calculatePercentageUsed(
-                    budget.minutes_used || 0,
-                    budget.minutes_annual || 0
-                  )
-
-                  let statusVariant: "success" | "warning" | "critical" = "success"
-                  if (percentageUsed >= 80) statusVariant = "critical"
-                  else if (percentageUsed >= 50) statusVariant = "warning"
+                {data.weeklyActivities.map((activity) => {
+                  const activityDate = new Date(activity.date)
+                  const teacher = activity.teacher
+                  const recoveryType = activity.recovery_type
 
                   return (
-                    <TableRow key={budget.id}>
+                    <TableRow key={activity.id}>
                       <TableCell className="font-medium">
+                        {activityDate.toLocaleDateString('it-IT', {
+                          weekday: 'short',
+                          day: '2-digit',
+                          month: '2-digit'
+                        })}
+                      </TableCell>
+                      <TableCell>{activity.module_number ? `${activity.module_number}°` : '-'}</TableCell>
+                      <TableCell>
                         {teacher?.cognome} {teacher?.nome}
                       </TableCell>
-                      <TableCell>{budget.modules_annual?.toFixed(1)}</TableCell>
-                      <TableCell>{budget.modules_used?.toFixed(1) || "0.0"}</TableCell>
-                      <TableCell>{modulesRemaining.toFixed(1)}</TableCell>
+                      <TableCell>{activity.title}</TableCell>
                       <TableCell>
-                        <Badge variant={statusVariant}>
-                          {percentageUsed}%
+                        <Badge
+                          style={{ backgroundColor: recoveryType?.color || '#3B82F6' }}
+                          className="text-white"
+                        >
+                          {recoveryType?.name || 'N/A'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={activity.status === 'completed' ? 'default' : 'secondary'}>
+                          {activity.status === 'planned' ? 'Pianificato' : 'Completato'}
                         </Badge>
                       </TableCell>
                     </TableRow>
