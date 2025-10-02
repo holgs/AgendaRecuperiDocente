@@ -3,9 +3,9 @@ import { z } from 'zod'
 // Schema per validazione singola riga CSV import tesoretti
 export const csvTesorettoRowSchema = z.object({
   docente: z.string().min(1, 'Nome docente obbligatorio'),
-  minutiSettimanali: z.number().int().positive('Minuti settimanali devono essere positivi'),
-  tesorettoAnnuale: z.number().int().positive('Tesoretto annuale deve essere positivo'),
-  moduliAnnui: z.number().int().positive('Moduli annui devono essere positivi'),
+  minutiSettimanali: z.number().int().nonnegative('Minuti settimanali non possono essere negativi'),
+  tesorettoAnnuale: z.number().int().nonnegative('Tesoretto annuale non può essere negativo'),
+  moduliAnnui: z.number().int().nonnegative('Moduli annui non possono essere negativi'),
   saldo: z.number().int().nonnegative('Saldo non può essere negativo'),
 })
 
