@@ -36,17 +36,26 @@ export default function DashboardPage() {
 
   async function fetchDashboardData() {
     try {
-      const [teachersRes, schoolYearsRes, budgetsRes, activitiesRes] = await Promise.all([
+      const [teachersRes, schoolYearsRes, budgetsRes] = await Promise.all([
         fetch('/api/teachers'),
         fetch('/api/school-years'),
-        fetch('/api/budgets'),
-        fetch('/api/activities').catch(() => ({ ok: false }))
+        fetch('/api/budgets')
       ])
 
       const teachers = teachersRes.ok ? await teachersRes.json() : []
       const schoolYears = schoolYearsRes.ok ? await schoolYearsRes.json() : []
       const budgets = budgetsRes.ok ? await budgetsRes.json() : []
-      const activities = activitiesRes.ok ? await activitiesRes.json() : []
+
+      // Fetch activities separately to handle potential errors
+      let activities = []
+      try {
+        const activitiesRes = await fetch('/api/activities')
+        if (activitiesRes.ok) {
+          activities = await activitiesRes.json()
+        }
+      } catch (error) {
+        console.log('Activities not available yet')
+      }
 
       const currentYear = schoolYears.find((y: any) => y.is_active)
       const totalModules = budgets.reduce((sum: number, b: any) => sum + (b.modules_annual || 0), 0)
