@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -14,37 +13,52 @@ export async function GET(request: NextRequest) {
     }
 
     // Get active school year
-    const activeYear = await prisma.school_years.findFirst({
-      where: { is_active: true }
-    })
+    const { data: activeYear, error: yearError } = await supabase
+      .from('school_years')
+      .select('*')
+      .eq('is_active', true)
+      .single()
 
-    if (!activeYear) {
+    if (yearError || !activeYear) {
       return NextResponse.json({
         error: 'No active school year found'
       }, { status: 404 })
     }
 
     // Get all teachers with their budgets for active year
-    const teachers = await prisma.teachers.findMany({
-      include: {
-        teacher_budgets: {
-          where: {
-            school_year_id: activeYear.id
-          },
-          include: {
-            school_year: true
-          }
-        }
-      },
-      orderBy: [
-        { cognome: 'asc' },
-        { nome: 'asc' }
-      ]
-    })
+    const { data: teachers, error: teachersError } = await supabase
+      .from('teachers')
+      .select(`
+        id,
+        nome,
+        cognome,
+        email,
+        teacher_budgets!inner (
+          id,
+          school_year_id,
+          modules_annual,
+          modules_used,
+          minutes_annual,
+          minutes_used
+        )
+      `)
+      .eq('teacher_budgets.school_year_id', activeYear.id)
+      .order('cognome', { ascending: true })
+      .order('nome', { ascending: true })
+
+    if (teachersError) {
+      console.error('Error fetching teachers:', teachersError)
+      return NextResponse.json(
+        { error: 'Failed to fetch teachers' },
+        { status: 500 }
+      )
+    }
 
     // Transform data to include computed fields
-    const teachersWithStats = teachers.map(teacher => {
-      const budget = teacher.teacher_budgets[0] // Get budget for active year
+    const teachersWithStats = (teachers || []).map(teacher => {
+      const budget = Array.isArray(teacher.teacher_budgets)
+        ? teacher.teacher_budgets[0]
+        : teacher.teacher_budgets
 
       return {
         id: teacher.id,
@@ -60,7 +74,7 @@ export async function GET(request: NextRequest) {
           minutesUsed: budget.minutes_used || 0,
           minutesAvailable: budget.minutes_annual - (budget.minutes_used || 0),
           percentageUsed: budget.minutes_annual > 0
-            ? Math.round((budget.minutes_used || 0) / budget.minutes_annual * 100)
+            ? Math.round(((budget.minutes_used || 0) / budget.minutes_annual) * 100)
             : 0
         } : null
       }
