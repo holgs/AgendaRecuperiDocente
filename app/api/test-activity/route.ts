@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
       title: `Test ${body.class_name}`,
       duration_minutes: 50,
       modules_equivalent: 1,
-      status: 'planned'
+      status: 'planned',
+      created_by: user.id
     }
 
     console.log('TEST - Minimal activity data:', minimalActivity)
