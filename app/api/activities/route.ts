@@ -156,6 +156,7 @@ export async function POST(request: NextRequest) {
       date,
       module_number,
       class_name,
+      title: `Recupero ${class_name} - Modulo ${module_number}`,  // Auto-generated title
       duration_minutes: 50,
       modules_equivalent: 1,
       status: 'planned',
