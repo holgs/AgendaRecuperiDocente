@@ -163,35 +163,30 @@ export async function POST(request: NextRequest) {
     // Create activity - duration always 50 minutes (1 module)
     console.log('📝 Creating activity...')
 
-    // Check if user exists in public.users table
-    const { data: existingUser, error: userCheckError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', user.id)
-      .single()
-
-    console.log('👤 User check:', { existingUser, userCheckError })
-
-    // If user doesn't exist in public.users, create it
-    if (!existingUser && userCheckError) {
-      console.log('⚠️ User not found in public.users, creating...')
-      const { data: newUser, error: createUserError } = await supabase
+    // Try to ensure user exists in public.users table (ignore errors)
+    try {
+      const { data: existingUser } = await supabase
         .from('users')
-        .insert({
-          id: user.id,
-          email: user.email,
-          role: 'admin',  // Default role
-          name: user.email?.split('@')[0] || 'User'
-        })
-        .select()
-        .single()
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle()
 
-      console.log('👤 User creation result:', { newUser, createUserError })
-
-      if (createUserError) {
-        console.log('❌ Failed to create user:', createUserError)
-        // Continue anyway, might work without created_by
+      if (!existingUser) {
+        console.log('⚠️ User not in public.users, attempting creation...')
+        await supabase
+          .from('users')
+          .insert({
+            id: user.id,
+            email: user.email || 'unknown@email.com',
+            role: 'admin',
+            name: user.email?.split('@')[0] || 'User'
+          })
+          .select()
+          .maybeSingle()
       }
+    } catch (userError) {
+      console.log('⚠️ User sync failed (non-critical):', userError)
+      // Continue - will fail on FK if user really doesn't exist
     }
 
     const activityData = {
