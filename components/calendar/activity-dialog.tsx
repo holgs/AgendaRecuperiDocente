@@ -65,27 +65,41 @@ export function ActivityDialog({
       return
     }
 
+    // Debug: Check if schoolYearId is present
+    if (!schoolYearId) {
+      setError("Anno scolastico non disponibile. Ricarica la pagina.")
+      return
+    }
+
     setLoading(true)
     setError("")
     setWarning("")
+
+    const payload = {
+      teacher_id: teacherId,
+      school_year_id: schoolYearId,
+      date: format(date, "yyyy-MM-dd"),
+      module_number: parseInt(moduleNumber),
+      class_name: className,
+      recovery_type_id: recoveryTypeId
+    }
+
+    console.log('📤 Sending activity payload:', payload)
 
     try {
       const response = await fetch("/api/activities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          teacher_id: teacherId,
-          school_year_id: schoolYearId,
-          date: format(date, "yyyy-MM-dd"),
-          module_number: parseInt(moduleNumber),
-          class_name: className,
-          recovery_type_id: recoveryTypeId
-        })
+        body: JSON.stringify(payload)
       })
 
+      console.log('📥 Response status:', response.status, response.statusText)
+
       const data = await response.json()
+      console.log('📥 Response data:', data)
 
       if (!response.ok) {
+        console.error('❌ Error response:', data)
         setError(data.error || "Errore durante la creazione dell'attività")
         return
       }
@@ -93,6 +107,8 @@ export function ActivityDialog({
       if (data.warning) {
         setWarning(data.warning)
       }
+
+      console.log('✅ Activity created successfully')
 
       // Persist className and recoveryTypeId for next insertion
       setPersistedClassName(className)
@@ -106,6 +122,7 @@ export function ActivityDialog({
       onSuccess(true)
       onOpenChange(false)
     } catch (err) {
+      console.error('❌ Fetch error:', err)
       setError("Errore di connessione")
     } finally {
       setLoading(false)
