@@ -1,17 +1,19 @@
-import { prisma } from '@/lib/prisma'
+import { createClient } from '@/lib/supabase/server'
 
 /**
  * Calculate remaining budget for a teacher in a specific school year
  */
 export async function getTeacherRemainingBudget(teacherId: string, schoolYearId: string) {
-  const budget = await prisma.teacher_budgets.findFirst({
-    where: {
-      teacher_id: teacherId,
-      school_year_id: schoolYearId
-    }
-  })
+  const supabase = await createClient()
 
-  if (!budget) {
+  const { data: budget, error } = await supabase
+    .from('teacher_budgets')
+    .select('*')
+    .eq('teacher_id', teacherId)
+    .eq('school_year_id', schoolYearId)
+    .single()
+
+  if (error || !budget) {
     return null
   }
 
@@ -35,14 +37,16 @@ export async function updateTeacherBudgetUsage(
   minutesUsed: number,
   modulesUsed: number
 ) {
-  const budget = await prisma.teacher_budgets.findFirst({
-    where: {
-      teacher_id: teacherId,
-      school_year_id: schoolYearId
-    }
-  })
+  const supabase = await createClient()
 
-  if (!budget) {
+  const { data: budget, error } = await supabase
+    .from('teacher_budgets')
+    .select('*')
+    .eq('teacher_id', teacherId)
+    .eq('school_year_id', schoolYearId)
+    .single()
+
+  if (error || !budget) {
     throw new Error('Budget not found for this teacher and school year')
   }
 
@@ -59,23 +63,42 @@ export async function updateTeacherBudgetUsage(
   }
 
   // Update budget
-  return prisma.teacher_budgets.update({
-    where: { id: budget.id },
-    data: {
+  const { data, error: updateError } = await supabase
+    .from('teacher_budgets')
+    .update({
       minutes_used: newMinutesUsed,
       modules_used: newModulesUsed
-    }
-  })
+    })
+    .eq('id', budget.id)
+    .select()
+    .single()
+
+  if (updateError) {
+    throw updateError
+  }
+
+  return data
 }
 
 /**
  * Get active school year
  */
 export async function getActiveSchoolYear() {
-  return prisma.school_years.findFirst({
-    where: { is_active: true },
-    orderBy: { start_date: 'desc' }
-  })
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('school_years')
+    .select('*')
+    .eq('is_active', true)
+    .order('start_date', { ascending: false })
+    .limit(1)
+    .single()
+
+  if (error) {
+    return null
+  }
+
+  return data
 }
 
 /**
@@ -91,8 +114,11 @@ export async function logActivity(
   ipAddress?: string,
   userAgent?: string
 ) {
-  return prisma.activity_logs.create({
-    data: {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('activity_logs')
+    .insert({
       user_id: userId,
       action,
       table_name: tableName,
@@ -101,6 +127,13 @@ export async function logActivity(
       new_values: newValues,
       ip_address: ipAddress,
       user_agent: userAgent
-    }
-  })
+    })
+    .select()
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,22 +12,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const teachers = await prisma.teachers.findMany({
-      orderBy: [
-        { cognome: 'asc' },
-        { nome: 'asc' }
-      ],
-      include: {
-        teacher_budgets: {
-          include: {
-            school_year: true
-          },
-          orderBy: {
-            import_date: 'desc'
-          }
-        }
-      }
-    })
+    const { data: teachers, error } = await supabase
+      .from('teachers')
+      .select(`
+        *,
+        teacher_budgets (
+          *,
+          school_year:school_years (*)
+        )
+      `)
+      .order('cognome', { ascending: true })
+      .order('nome', { ascending: true })
+
+    if (error) {
+      throw error
+    }
 
     return NextResponse.json({ teachers })
   } catch (error) {
@@ -57,13 +57,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const teacher = await prisma.teachers.create({
-      data: {
+    const { data: teacher, error } = await supabase
+      .from('teachers')
+      .insert({
         cognome,
         nome,
         email: email || null
-      }
-    })
+      })
+      .select()
+      .single()
+
+    if (error) {
+      throw error
+    }
 
     return NextResponse.json({ teacher }, { status: 201 })
   } catch (error) {

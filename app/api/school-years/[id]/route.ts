@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+
+export const dynamic = 'force-dynamic'
 
 const updateSchoolYearSchema = z.object({
   name: z.string().min(1).optional(),
@@ -25,23 +26,23 @@ export async function GET(
 
     const { id } = await params
 
-    const schoolYear = await prisma.school_years.findUnique({
-      where: { id },
-      include: {
-        teacher_budgets: {
-          select: {
-            id: true,
-            teacher_id: true,
-            minutes_annual: true,
-            modules_annual: true,
-            minutes_used: true,
-            modules_used: true
-          }
-        }
-      }
-    })
+    const { data: schoolYear, error } = await supabase
+      .from('school_years')
+      .select(`
+        *,
+        teacher_budgets (
+          id,
+          teacher_id,
+          minutes_annual,
+          modules_annual,
+          minutes_used,
+          modules_used
+        )
+      `)
+      .eq('id', id)
+      .single()
 
-    if (!schoolYear) {
+    if (error || !schoolYear) {
       return NextResponse.json({ error: 'School year not found' }, { status: 404 })
     }
 
@@ -73,27 +74,31 @@ export async function PUT(
 
     // If setting as active, deactivate all other school years
     if (validatedData.is_active) {
-      await prisma.school_years.updateMany({
-        where: {
-          is_active: true,
-          NOT: { id }
-        },
-        data: { is_active: false }
-      })
+      await supabase
+        .from('school_years')
+        .update({ is_active: false })
+        .eq('is_active', true)
+        .neq('id', id)
     }
 
     const updateData: any = {}
 
     if (validatedData.name !== undefined) updateData.name = validatedData.name
-    if (validatedData.start_date !== undefined) updateData.start_date = new Date(validatedData.start_date)
-    if (validatedData.end_date !== undefined) updateData.end_date = new Date(validatedData.end_date)
+    if (validatedData.start_date !== undefined) updateData.start_date = validatedData.start_date
+    if (validatedData.end_date !== undefined) updateData.end_date = validatedData.end_date
     if (validatedData.is_active !== undefined) updateData.is_active = validatedData.is_active
     if (validatedData.weeks_count !== undefined) updateData.weeks_count = validatedData.weeks_count
 
-    const schoolYear = await prisma.school_years.update({
-      where: { id },
-      data: updateData
-    })
+    const { data: schoolYear, error } = await supabase
+      .from('school_years')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      throw error
+    }
 
     return NextResponse.json(schoolYear)
   } catch (error) {
@@ -127,20 +132,30 @@ export async function DELETE(
     const { id } = await params
 
     // Check if school year has budgets
-    const budgetCount = await prisma.teacher_budgets.count({
-      where: { school_year_id: id }
-    })
+    const { count, error: countError } = await supabase
+      .from('teacher_budgets')
+      .select('*', { count: 'exact', head: true })
+      .eq('school_year_id', id)
 
-    if (budgetCount > 0) {
+    if (countError) {
+      throw countError
+    }
+
+    if (count && count > 0) {
       return NextResponse.json(
         { error: 'Cannot delete school year with existing budgets' },
         { status: 400 }
       )
     }
 
-    await prisma.school_years.delete({
-      where: { id }
-    })
+    const { error } = await supabase
+      .from('school_years')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      throw error
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

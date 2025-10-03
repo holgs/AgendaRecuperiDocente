@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { prisma } from '@/lib/prisma'
 
 export async function getCurrentUser() {
   const supabase = await createClient()
@@ -10,9 +9,11 @@ export async function getCurrentUser() {
   }
 
   // Get user details from database
-  const dbUser = await prisma.users.findUnique({
-    where: { email: user.email || '' }
-  })
+  const { data: dbUser } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', user.email || '')
+    .single()
 
   return {
     id: user.id,

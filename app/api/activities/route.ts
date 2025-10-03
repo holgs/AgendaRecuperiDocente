@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,34 +16,34 @@ export async function GET(request: NextRequest) {
     const schoolYearId = searchParams.get('schoolYearId')
     const teacherId = searchParams.get('teacherId')
 
-    const where: any = {}
+    let query = supabase
+      .from('recovery_activities')
+      .select(`
+        *,
+        teacher:teachers (
+          cognome,
+          nome
+        ),
+        recovery_type:recovery_types (
+          name,
+          color
+        )
+      `)
+      .order('date', { ascending: false })
 
     if (schoolYearId) {
-      where.school_year_id = schoolYearId
+      query = query.eq('school_year_id', schoolYearId)
     }
 
     if (teacherId) {
-      where.teacher_id = teacherId
+      query = query.eq('teacher_id', teacherId)
     }
 
-    const activities = await prisma.recovery_activities.findMany({
-      where,
-      orderBy: { date: 'desc' },
-      include: {
-        teacher: {
-          select: {
-            cognome: true,
-            nome: true
-          }
-        },
-        recovery_type: {
-          select: {
-            name: true,
-            color: true
-          }
-        }
-      }
-    })
+    const { data: activities, error } = await query
+
+    if (error) {
+      throw error
+    }
 
     return NextResponse.json(activities)
   } catch (error) {

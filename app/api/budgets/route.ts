@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,20 +16,28 @@ export async function GET(request: NextRequest) {
     const teacherId = searchParams.get('teacherId')
     const schoolYearId = searchParams.get('schoolYearId')
 
-    const where: any = {}
-    if (teacherId) where.teacher_id = teacherId
-    if (schoolYearId) where.school_year_id = schoolYearId
+    let query = supabase
+      .from('teacher_budgets')
+      .select(`
+        *,
+        teacher:teachers (*),
+        school_year:school_years (*)
+      `)
+      .order('import_date', { ascending: false })
 
-    const budgets = await prisma.teacher_budgets.findMany({
-      where,
-      include: {
-        teacher: true,
-        school_year: true
-      },
-      orderBy: {
-        import_date: 'desc'
-      }
-    })
+    if (teacherId) {
+      query = query.eq('teacher_id', teacherId)
+    }
+
+    if (schoolYearId) {
+      query = query.eq('school_year_id', schoolYearId)
+    }
+
+    const { data: budgets, error } = await query
+
+    if (error) {
+      throw error
+    }
 
     return NextResponse.json({ budgets })
   } catch (error) {

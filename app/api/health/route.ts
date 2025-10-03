@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET() {
   try {
+    const supabase = await createClient()
+
     // Test database connection
-    await prisma.$queryRaw`SELECT 1`
+    const { error } = await supabase.from('users').select('count').limit(1).single()
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned, still connected
+      throw error
+    }
 
     return NextResponse.json({
       status: 'ok',
