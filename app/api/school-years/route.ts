@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+
+export const dynamic = 'force-dynamic'
 
 const schoolYearSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -23,10 +24,20 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const activeOnly = searchParams.get('activeOnly') === 'true'
 
-    const schoolYears = await prisma.school_years.findMany({
-      where: activeOnly ? { is_active: true } : undefined,
-      orderBy: { start_date: 'desc' }
-    })
+    let query = supabase
+      .from('school_years')
+      .select('*')
+      .order('start_date', { ascending: false })
+
+    if (activeOnly) {
+      query = query.eq('is_active', true)
+    }
+
+    const { data: schoolYears, error } = await query
+
+    if (error) {
+      throw error
+    }
 
     return NextResponse.json(schoolYears)
   } catch (error) {
@@ -52,21 +63,27 @@ export async function POST(request: NextRequest) {
 
     // If setting as active, deactivate all other school years
     if (validatedData.is_active) {
-      await prisma.school_years.updateMany({
-        where: { is_active: true },
-        data: { is_active: false }
-      })
+      await supabase
+        .from('school_years')
+        .update({ is_active: false })
+        .eq('is_active', true)
     }
 
-    const schoolYear = await prisma.school_years.create({
-      data: {
+    const { data: schoolYear, error } = await supabase
+      .from('school_years')
+      .insert({
         name: validatedData.name,
-        start_date: new Date(validatedData.start_date),
-        end_date: new Date(validatedData.end_date),
+        start_date: validatedData.start_date,
+        end_date: validatedData.end_date,
         is_active: validatedData.is_active,
         weeks_count: validatedData.weeks_count
-      }
-    })
+      })
+      .select()
+      .single()
+
+    if (error) {
+      throw error
+    }
 
     return NextResponse.json(schoolYear, { status: 201 })
   } catch (error) {
