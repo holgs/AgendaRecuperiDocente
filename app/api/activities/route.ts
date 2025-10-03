@@ -163,32 +163,7 @@ export async function POST(request: NextRequest) {
     // Create activity - duration always 50 minutes (1 module)
     console.log('📝 Creating activity...')
 
-    // Try to ensure user exists in public.users table (ignore errors)
-    try {
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle()
-
-      if (!existingUser) {
-        console.log('⚠️ User not in public.users, attempting creation...')
-        await supabase
-          .from('users')
-          .insert({
-            id: user.id,
-            email: user.email || 'unknown@email.com',
-            role: 'admin',
-            name: user.email?.split('@')[0] || 'User'
-          })
-          .select()
-          .maybeSingle()
-      }
-    } catch (userError) {
-      console.log('⚠️ User sync failed (non-critical):', userError)
-      // Continue - will fail on FK if user really doesn't exist
-    }
-
+    // TEMPORARY: Remove created_by to bypass FK issue for testing
     const activityData = {
       teacher_id,
       school_year_id,
@@ -199,8 +174,8 @@ export async function POST(request: NextRequest) {
       title: `Recupero ${class_name} - Modulo ${module_number}`,  // Auto-generated title
       duration_minutes: 50,
       modules_equivalent: 1,
-      status: 'planned',
-      created_by: user.id
+      status: 'planned'
+      // created_by: user.id  // Temporarily removed to test if FK is causing 500 error
     }
     console.log('📝 Activity data:', activityData)
 
