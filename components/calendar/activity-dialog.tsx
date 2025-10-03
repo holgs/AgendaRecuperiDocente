@@ -87,7 +87,7 @@ export function ActivityDialog({
     console.log('📤 Sending activity payload:', payload)
 
     try {
-      const response = await fetch("/api/activities", {
+      const response = await fetch("/api/test-activity", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -100,7 +100,11 @@ export function ActivityDialog({
 
       if (!response.ok) {
         console.error('❌ Error response:', data)
-        setError(data.error || "Errore durante la creazione dell'attività")
+        // Show detailed error info from test endpoint
+        const errorMsg = data.details ?
+          `${data.error}\n\nDetails: ${JSON.stringify(data.details, null, 2)}\n\nHint: ${data.hint || 'N/A'}` :
+          data.error || "Errore durante la creazione dell'attività"
+        setError(errorMsg)
         return
       }
 
@@ -204,7 +208,7 @@ export function ActivityDialog({
 
           {/* Error Message */}
           {error && (
-            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md whitespace-pre-wrap">
               {error}
             </div>
           )}
