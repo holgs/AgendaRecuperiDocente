@@ -163,6 +163,37 @@ export async function POST(request: NextRequest) {
     // Create activity - duration always 50 minutes (1 module)
     console.log('📝 Creating activity...')
 
+    // Check if user exists in public.users table
+    const { data: existingUser, error: userCheckError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+
+    console.log('👤 User check:', { existingUser, userCheckError })
+
+    // If user doesn't exist in public.users, create it
+    if (!existingUser && userCheckError) {
+      console.log('⚠️ User not found in public.users, creating...')
+      const { data: newUser, error: createUserError } = await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          email: user.email,
+          role: 'admin',  // Default role
+          name: user.email?.split('@')[0] || 'User'
+        })
+        .select()
+        .single()
+
+      console.log('👤 User creation result:', { newUser, createUserError })
+
+      if (createUserError) {
+        console.log('❌ Failed to create user:', createUserError)
+        // Continue anyway, might work without created_by
+      }
+    }
+
     const activityData = {
       teacher_id,
       school_year_id,
