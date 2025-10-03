@@ -65,7 +65,7 @@ export default function TeacherCalendarPage({ params }: { params: { id: string }
       // Fetch recovery types
       const typesRes = await fetch("/api/recovery-types")
       const typesData = await typesRes.json()
-      setRecoveryTypes(typesData.recoveryTypes || [])
+      setRecoveryTypes(typesData || [])
 
     } catch (error) {
       toast({
