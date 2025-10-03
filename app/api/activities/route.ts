@@ -110,13 +110,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Convert date string to ISO for database queries
+    const dateStart = new Date(date)
+    dateStart.setHours(0, 0, 0, 0)
+    const dateStartISO = dateStart.toISOString()
+
+    const dateEnd = new Date(date)
+    dateEnd.setHours(23, 59, 59, 999)
+    const dateEndISO = dateEnd.toISOString()
+
+    console.log('📅 Date range for overlap check:', { dateStartISO, dateEndISO })
+
     // Validation: Check teacher overlap (same teacher, same date, same module)
     console.log('🔍 Checking teacher overlap...')
     const { data: teacherOverlap, error: overlapError } = await supabase
       .from('recovery_activities')
       .select('id')
       .eq('teacher_id', teacher_id)
-      .eq('date', date)
+      .gte('date', dateStartISO)
+      .lte('date', dateEndISO)
       .eq('module_number', module_number)
       .limit(1)
 
@@ -141,7 +153,8 @@ export async function POST(request: NextRequest) {
       .from('recovery_activities')
       .select('id, teacher:teachers(cognome, nome)')
       .eq('class_name', class_name)
-      .eq('date', date)
+      .gte('date', dateStartISO)
+      .lte('date', dateEndISO)
       .eq('module_number', module_number)
       .limit(1)
 
@@ -149,11 +162,12 @@ export async function POST(request: NextRequest) {
 
     // Create activity - duration always 50 minutes (1 module)
     console.log('📝 Creating activity...')
+
     const activityData = {
       teacher_id,
       school_year_id,
       recovery_type_id,
-      date,
+      date: dateStartISO,  // Use ISO timestamp (start of day) for consistency
       module_number,
       class_name,
       title: `Recupero ${class_name} - Modulo ${module_number}`,  // Auto-generated title
