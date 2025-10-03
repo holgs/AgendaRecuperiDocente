@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
     const minimalActivity = {
       teacher_id: body.teacher_id,
       school_year_id: body.school_year_id,
+      recovery_type_id: body.recovery_type_id,
       date: new Date(body.date).toISOString(),
       module_number: parseInt(body.module_number),
       class_name: body.class_name,
