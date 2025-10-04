@@ -12,6 +12,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Ensure user exists in public.users table (for FK constraint)
+    console.log('TEST - Checking if user exists in public.users:', user.id)
+    const { data: existingUser, error: userCheckError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    console.log('TEST - User check result:', { existingUser, userCheckError })
+
+    if (!existingUser && !userCheckError) {
+      console.log('TEST - User not found, inserting into public.users')
+      const { error: insertUserError } = await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          email: user.email,
+          role: 'admin',
+          name: user.email?.split('@')[0] || 'User'
+        })
+
+      if (insertUserError) {
+        console.error('TEST - Error inserting user:', insertUserError)
+        return NextResponse.json({
+          error: 'Failed to create user record',
+          details: insertUserError
+        }, { status: 500 })
+      }
+      console.log('TEST - User inserted successfully')
+    }
+
     const body = await request.json()
     console.log('TEST - Request body:', body)
 
