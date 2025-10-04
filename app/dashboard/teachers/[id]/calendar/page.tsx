@@ -22,6 +22,7 @@ export default function TeacherCalendarPage({ params }: { params: { id: string }
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [selectedModule, setSelectedModule] = useState<number | undefined>()
+  const [selectedActivity, setSelectedActivity] = useState<any>(undefined)
 
   const [activities, setActivities] = useState<any[]>([])
   const [recoveryTypes, setRecoveryTypes] = useState<any[]>([])
@@ -90,21 +91,23 @@ export default function TeacherCalendarPage({ params }: { params: { id: string }
   const handleCellClick = (date: Date, module: number) => {
     setSelectedDate(date)
     setSelectedModule(module)
+    setSelectedActivity(undefined)
     setDialogOpen(true)
   }
 
   const handleNewActivity = () => {
     setSelectedDate(undefined)
     setSelectedModule(undefined)
+    setSelectedActivity(undefined)
     setDialogOpen(true)
   }
 
   const handleActivityClick = (activity: any) => {
-    // For now, just show a toast. In future, open edit dialog
-    toast({
-      title: "Attività",
-      description: `${activity.class_name} - Modulo ${activity.module_number}`
-    })
+    // Open dialog in edit mode
+    setSelectedActivity(activity)
+    setSelectedDate(undefined)
+    setSelectedModule(undefined)
+    setDialogOpen(true)
   }
 
   const handleDeleteActivity = async (activityId: string) => {
@@ -132,6 +135,35 @@ export default function TeacherCalendarPage({ params }: { params: { id: string }
       toast({
         title: "Errore",
         description: error.message || "Impossibile eliminare l'attività",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleToggleComplete = async (activityId: string, currentStatus: string) => {
+    const newStatus = currentStatus === "completed" ? "planned" : "completed"
+
+    try {
+      const res = await fetch(`/api/activities/${activityId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      if (!res.ok) {
+        throw new Error("Errore durante l'aggiornamento")
+      }
+
+      toast({
+        title: "Successo",
+        description: newStatus === "completed" ? "Attività completata" : "Attività riaperta"
+      })
+
+      fetchData()
+    } catch (error: any) {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile aggiornare l'attività",
         variant: "destructive"
       })
     }
@@ -234,6 +266,7 @@ export default function TeacherCalendarPage({ params }: { params: { id: string }
               onCellClick={handleCellClick}
               onActivityClick={handleActivityClick}
               onDeleteActivity={handleDeleteActivity}
+              onToggleComplete={handleToggleComplete}
             />
           ) : (
             <CalendarList
@@ -260,6 +293,7 @@ export default function TeacherCalendarPage({ params }: { params: { id: string }
         recoveryTypes={recoveryTypes}
         defaultDate={selectedDate}
         defaultModule={selectedModule}
+        activity={selectedActivity}
         onSuccess={(incrementCounter) => {
           if (incrementCounter) {
             setSessionCounter(prev => prev + 1)

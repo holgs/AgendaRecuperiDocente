@@ -20,6 +20,7 @@ interface ActivityDialogProps {
   recoveryTypes: Array<{ id: string; name: string; color: string }>
   defaultDate?: Date
   defaultModule?: number
+  activity?: any  // Activity to edit (if in edit mode)
   onSuccess: (incrementCounter?: boolean) => void
 }
 
@@ -31,8 +32,10 @@ export function ActivityDialog({
   recoveryTypes,
   defaultDate,
   defaultModule,
+  activity,
   onSuccess
 }: ActivityDialogProps) {
+  const isEditMode = !!activity
   const [date, setDate] = useState<Date | undefined>(defaultDate)
   const [moduleNumber, setModuleNumber] = useState<string>(defaultModule?.toString() || "")
   const [className, setClassName] = useState("")
@@ -47,17 +50,26 @@ export function ActivityDialog({
 
   // Update date and module when defaults change (new cell clicked)
   useEffect(() => {
-    setDate(defaultDate)
-    setModuleNumber(defaultModule?.toString() || "")
-  }, [defaultDate, defaultModule])
+    if (activity) {
+      // Edit mode: load activity data
+      setDate(new Date(activity.date))
+      setModuleNumber(activity.module_number.toString())
+      setClassName(activity.class_name)
+      setRecoveryTypeId(activity.recovery_type_id)
+    } else {
+      // Create mode: use defaults
+      setDate(defaultDate)
+      setModuleNumber(defaultModule?.toString() || "")
+    }
+  }, [activity, defaultDate, defaultModule])
 
-  // Restore persisted values when dialog opens
+  // Restore persisted values when dialog opens (only in create mode)
   useEffect(() => {
-    if (open) {
+    if (open && !activity) {
       setClassName(persistedClassName)
       setRecoveryTypeId(persistedRecoveryTypeId)
     }
-  }, [open, persistedClassName, persistedRecoveryTypeId])
+  }, [open, activity, persistedClassName, persistedRecoveryTypeId])
 
   const handleSubmit = async () => {
     if (!date || !moduleNumber || !className || !recoveryTypeId) {
@@ -66,7 +78,7 @@ export function ActivityDialog({
     }
 
     // Debug: Check if schoolYearId is present
-    if (!schoolYearId) {
+    if (!schoolYearId && !isEditMode) {
       setError("Anno scolastico non disponibile. Ricarica la pagina.")
       return
     }
@@ -75,7 +87,12 @@ export function ActivityDialog({
     setError("")
     setWarning("")
 
-    const payload = {
+    const payload = isEditMode ? {
+      date: format(date, "yyyy-MM-dd"),
+      module_number: parseInt(moduleNumber),
+      class_name: className,
+      recovery_type_id: recoveryTypeId
+    } : {
       teacher_id: teacherId,
       school_year_id: schoolYearId,
       date: format(date, "yyyy-MM-dd"),
@@ -84,27 +101,20 @@ export function ActivityDialog({
       recovery_type_id: recoveryTypeId
     }
 
-    console.log('📤 Sending activity payload:', payload)
-
     try {
-      const response = await fetch("/api/activities", {
-        method: "POST",
+      const url = isEditMode ? `/api/activities/${activity.id}` : "/api/activities"
+      const method = isEditMode ? "PUT" : "POST"
+
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       })
 
-      console.log('📥 Response status:', response.status, response.statusText)
-
       const data = await response.json()
-      console.log('📥 Response data:', data)
 
       if (!response.ok) {
-        console.error('❌ Error response:', data)
-        // Show detailed error info from test endpoint
-        const errorMsg = data.details ?
-          `${data.error}\n\nDetails: ${JSON.stringify(data.details, null, 2)}\n\nHint: ${data.hint || 'N/A'}` :
-          data.error || "Errore durante la creazione dell'attività"
-        setError(errorMsg)
+        setError(data.error || `Errore durante ${isEditMode ? 'la modifica' : 'la creazione'} dell'attività`)
         return
       }
 
@@ -112,21 +122,20 @@ export function ActivityDialog({
         setWarning(data.warning)
       }
 
-      console.log('✅ Activity created successfully')
+      if (!isEditMode) {
+        // Only persist in create mode
+        setPersistedClassName(className)
+        setPersistedRecoveryTypeId(recoveryTypeId)
 
-      // Persist className and recoveryTypeId for next insertion
-      setPersistedClassName(className)
-      setPersistedRecoveryTypeId(recoveryTypeId)
+        // Reset only date and module (classe and tipo restano)
+        setDate(undefined)
+        setModuleNumber("")
+      }
 
-      // Reset only date and module (classe and tipo restano)
-      setDate(undefined)
-      setModuleNumber("")
-
-      // Increment session counter and refresh calendar
-      onSuccess(true)
+      // Increment session counter only when creating (not editing)
+      onSuccess(!isEditMode)
       onOpenChange(false)
     } catch (err) {
-      console.error('❌ Fetch error:', err)
       setError("Errore di connessione")
     } finally {
       setLoading(false)
@@ -137,7 +146,7 @@ export function ActivityDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nuova Attività di Recupero</DialogTitle>
+          <DialogTitle>{isEditMode ? "Modifica Attività" : "Nuova Attività di Recupero"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">

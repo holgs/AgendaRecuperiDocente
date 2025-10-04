@@ -100,6 +100,35 @@ export default function ActivitiesPage() {
     })
   }
 
+  const handleToggleComplete = async (activityId: string, currentStatus: string) => {
+    const newStatus = currentStatus === "completed" ? "planned" : "completed"
+
+    try {
+      const res = await fetch(`/api/activities/${activityId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      if (!res.ok) {
+        throw new Error("Errore durante l'aggiornamento")
+      }
+
+      toast({
+        title: "Successo",
+        description: newStatus === "completed" ? "Attività completata" : "Attività riaperta"
+      })
+
+      fetchData()
+    } catch (error: any) {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile aggiornare l'attività",
+        variant: "destructive"
+      })
+    }
+  }
+
   const previousWeek = () => setCurrentDate(subWeeks(currentDate, 1))
   const nextWeek = () => setCurrentDate(addWeeks(currentDate, 1))
   const today = () => setCurrentDate(new Date())
@@ -203,21 +232,31 @@ export default function ActivitiesPage() {
                       {cellActivities.map((activity) => (
                         <div
                           key={activity.id}
-                          className="text-xs p-2 rounded cursor-pointer hover:opacity-80 transition-opacity"
+                          className={`text-xs p-2 rounded transition-opacity ${activity.status === 'completed' ? 'opacity-60' : ''}`}
                           style={{
                             backgroundColor: activity.recovery_type?.color + '20',
                             borderLeft: `3px solid ${activity.recovery_type?.color}`
                           }}
-                          title={`${activity.teacher?.cognome} ${activity.teacher?.nome} - ${activity.class_name}`}
                         >
-                          <div className="font-medium truncate">
-                            {activity.teacher?.cognome} {activity.teacher?.nome?.charAt(0)}.
-                          </div>
-                          <div className="text-muted-foreground truncate">
-                            {activity.class_name}
-                          </div>
-                          <div className="text-xs opacity-75 truncate">
-                            {activity.recovery_type?.name}
+                          <div className="flex items-start gap-2">
+                            <input
+                              type="checkbox"
+                              checked={activity.status === "completed"}
+                              onChange={() => handleToggleComplete(activity.id, activity.status)}
+                              className="mt-0.5 cursor-pointer"
+                              title={activity.status === "completed" ? "Segna come non completata" : "Segna come completata"}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate" title={`${activity.teacher?.cognome} ${activity.teacher?.nome} - ${activity.class_name}`}>
+                                {activity.teacher?.cognome} {activity.teacher?.nome?.charAt(0)}.
+                              </div>
+                              <div className="text-muted-foreground truncate">
+                                {activity.class_name}
+                              </div>
+                              <div className="text-xs opacity-75 truncate">
+                                {activity.recovery_type?.name}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       ))}

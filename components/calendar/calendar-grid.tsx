@@ -24,6 +24,7 @@ interface CalendarGridProps {
   onCellClick: (date: Date, module: number) => void
   onActivityClick: (activity: Activity) => void
   onDeleteActivity: (activityId: string) => void
+  onToggleComplete?: (activityId: string, currentStatus: string) => void
 }
 
 export function CalendarGrid({
@@ -31,7 +32,8 @@ export function CalendarGrid({
   activities,
   onCellClick,
   onActivityClick,
-  onDeleteActivity
+  onDeleteActivity,
+  onToggleComplete
 }: CalendarGridProps) {
   const [hoveredCell, setHoveredCell] = useState<string | null>(null)
 
@@ -117,12 +119,28 @@ export function CalendarGrid({
                     }}
                   >
                     <div className="flex items-start justify-between gap-1">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">
-                          {activity.class_name}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                          {getStatusIcon(activity.status)}
+                      <div className="flex items-start gap-1 flex-1 min-w-0">
+                        {onToggleComplete && (
+                          <input
+                            type="checkbox"
+                            checked={activity.status === "completed"}
+                            onChange={(e) => {
+                              e.stopPropagation()
+                              onToggleComplete(activity.id, activity.status)
+                            }}
+                            className="mt-0.5 cursor-pointer"
+                            title={activity.status === "completed" ? "Segna come non completata" : "Segna come completata"}
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">
+                            {activity.class_name}
+                          </div>
+                          {!onToggleComplete && (
+                            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                              {getStatusIcon(activity.status)}
+                            </div>
+                          )}
                         </div>
                       </div>
                       {!isCompleted && isHovered && (
