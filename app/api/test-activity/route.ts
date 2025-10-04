@@ -12,19 +12,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Ensure user exists in public.users table (for FK constraint)
-    console.log('TEST - Checking if user exists in public.users:', user.id)
+    // Find user in public.users table by email (for FK constraint)
+    console.log('TEST - Finding user by email:', user.email)
     const { data: existingUser, error: userCheckError } = await supabase
       .from('users')
       .select('id')
-      .eq('id', user.id)
+      .eq('email', user.email)
       .maybeSingle()
 
-    console.log('TEST - User check result:', { existingUser, userCheckError })
+    console.log('TEST - User lookup result:', { existingUser, userCheckError })
 
-    if (!existingUser && !userCheckError) {
-      console.log('TEST - User not found, inserting into public.users')
-      const { error: insertUserError } = await supabase
+    if (userCheckError) {
+      console.error('TEST - Error looking up user:', userCheckError)
+      return NextResponse.json({
+        error: 'Failed to lookup user',
+        details: userCheckError
+      }, { status: 500 })
+    }
+
+    if (!existingUser) {
+      console.log('TEST - User not found by email, inserting into public.users')
+      const { data: newUser, error: insertUserError } = await supabase
         .from('users')
         .insert({
           id: user.id,
@@ -32,6 +40,8 @@ export async function POST(request: NextRequest) {
           role: 'admin',
           name: user.email?.split('@')[0] || 'User'
         })
+        .select('id')
+        .single()
 
       if (insertUserError) {
         console.error('TEST - Error inserting user:', insertUserError)
@@ -40,8 +50,11 @@ export async function POST(request: NextRequest) {
           details: insertUserError
         }, { status: 500 })
       }
-      console.log('TEST - User inserted successfully')
+      console.log('TEST - User inserted successfully:', newUser)
     }
+
+    // Get the actual user ID from public.users (might be different from auth user.id)
+    const publicUserId = existingUser?.id || user.id
 
     const body = await request.json()
     console.log('TEST - Request body:', body)
@@ -58,7 +71,7 @@ export async function POST(request: NextRequest) {
       duration_minutes: 50,
       modules_equivalent: 1,
       status: 'planned',
-      created_by: user.id
+      created_by: publicUserId  // Use the ID from public.users, not auth
     }
 
     console.log('TEST - Minimal activity data:', minimalActivity)
