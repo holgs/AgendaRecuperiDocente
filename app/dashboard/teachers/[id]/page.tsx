@@ -13,7 +13,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { TeacherDetailCard } from "@/components/teachers/teacher-detail-card"
-import { ArrowLeft, Calendar, Loader2 } from "lucide-react"
+import { ActivityDialog } from "@/components/calendar/activity-dialog"
+import { ArrowLeft, Calendar, Loader2, Pencil, Trash2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { format } from "date-fns"
 import { it } from "date-fns/locale"
@@ -74,6 +75,9 @@ export default function TeacherDetailPage({ params }: { params: { id: string } }
   const { toast } = useToast()
   const [data, setData] = useState<TeacherDetailData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [selectedActivity, setSelectedActivity] = useState<Activity | undefined>()
+  const [recoveryTypes, setRecoveryTypes] = useState<any[]>([])
 
   useEffect(() => {
     fetchTeacherDetail()
@@ -98,6 +102,11 @@ export default function TeacherDetailPage({ params }: { params: { id: string } }
 
       const teacherData = await response.json()
       setData(teacherData)
+
+      // Fetch recovery types for dialog
+      const typesRes = await fetch("/api/recovery-types")
+      const typesData = await typesRes.json()
+      setRecoveryTypes(typesData || [])
     } catch (error) {
       console.error('Error fetching teacher details:', error)
       toast({
@@ -112,6 +121,41 @@ export default function TeacherDetailPage({ params }: { params: { id: string } }
 
   function handlePlanClick() {
     router.push(`/dashboard/teachers/${params.id}/calendar`)
+  }
+
+  function handleEditActivity(activity: Activity) {
+    setSelectedActivity(activity)
+    setDialogOpen(true)
+  }
+
+  async function handleDeleteActivity(activityId: string) {
+    if (!confirm("Sei sicuro di voler eliminare questa attività?")) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/activities/${activityId}`, {
+        method: "DELETE"
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error)
+      }
+
+      toast({
+        title: "Successo",
+        description: "Attività eliminata"
+      })
+
+      fetchTeacherDetail()
+    } catch (error: any) {
+      toast({
+        title: "Errore",
+        description: error.message || "Impossibile eliminare l'attività",
+        variant: "destructive"
+      })
+    }
   }
 
   function getStatusBadgeVariant(status: string): "default" | "secondary" | "outline" {
@@ -215,6 +259,7 @@ export default function TeacherDetailPage({ params }: { params: { id: string } }
                   <TableHead className="text-right">Durata</TableHead>
                   <TableHead className="text-right">Moduli</TableHead>
                   <TableHead>Stato</TableHead>
+                  <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -256,6 +301,28 @@ export default function TeacherDetailPage({ params }: { params: { id: string } }
                         {getStatusLabel(activity.status)}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditActivity(activity)}
+                          disabled={activity.status === 'completed'}
+                          title={activity.status === 'completed' ? 'Impossibile modificare attività completata' : 'Modifica attività'}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteActivity(activity.id)}
+                          disabled={activity.status === 'completed'}
+                          title={activity.status === 'completed' ? 'Impossibile eliminare attività completata' : 'Elimina attività'}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -263,6 +330,22 @@ export default function TeacherDetailPage({ params }: { params: { id: string } }
           </div>
         )}
       </div>
+
+      {/* Activity Dialog */}
+      {data && (
+        <ActivityDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          teacherId={params.id}
+          schoolYearId={data.activeYear.id}
+          recoveryTypes={recoveryTypes}
+          activity={selectedActivity}
+          onSuccess={() => {
+            fetchTeacherDetail()
+            setSelectedActivity(undefined)
+          }}
+        />
+      )}
     </div>
   )
 }
