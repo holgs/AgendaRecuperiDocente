@@ -57,7 +57,16 @@ export default function TeacherCalendarPage({ params }: { params: { id: string }
       // Filter activities for current week
       const weekActivities = activitiesData.filter((activity: any) => {
         const activityDate = new Date(activity.date)
-        return activityDate >= weekStart && activityDate <= weekEnd
+        // Normalize to start of day for comparison
+        activityDate.setHours(0, 0, 0, 0)
+
+        const normalizedWeekStart = new Date(weekStart)
+        normalizedWeekStart.setHours(0, 0, 0, 0)
+
+        const normalizedWeekEnd = new Date(weekEnd)
+        normalizedWeekEnd.setHours(23, 59, 59, 999)
+
+        return activityDate >= normalizedWeekStart && activityDate <= normalizedWeekEnd
       })
 
       setActivities(weekActivities)

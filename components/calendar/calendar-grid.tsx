@@ -38,7 +38,10 @@ export function CalendarGrid({
   // Get activities map by date and module
   const activitiesMap = new Map<string, Activity>()
   activities.forEach((activity) => {
-    const key = `${activity.date}-${activity.module_number}`
+    // Format date to yyyy-MM-dd to match the key format used in the grid
+    const activityDate = new Date(activity.date)
+    const formattedDate = format(activityDate, "yyyy-MM-dd")
+    const key = `${formattedDate}-${activity.module_number}`
     activitiesMap.set(key, activity)
   })
 
