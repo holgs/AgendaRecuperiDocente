@@ -94,8 +94,9 @@ export default function ActivitiesPage() {
   const getActivitiesForCell = (date: Date, module: number) => {
     return activities.filter(activity => {
       const activityDate = new Date(activity.date)
-      return activityDate.toDateString() === date.toDateString() &&
-             activity.module_number === module
+      const activityDateStr = format(activityDate, "yyyy-MM-dd")
+      const cellDateStr = format(date, "yyyy-MM-dd")
+      return activityDateStr === cellDateStr && activity.module_number === module
     })
   }
 
