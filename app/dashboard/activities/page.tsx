@@ -54,16 +54,8 @@ export default function ActivitiesPage() {
         url += `&teacherId=${selectedTeacher}`
       }
 
-      console.log("🔍 GLOBAL CALENDAR - Fetching from:", url)
       const activitiesRes = await fetch(url)
       const activitiesData = await activitiesRes.json()
-      console.log("📦 GLOBAL CALENDAR - Fetched activities:", activitiesData.length, activitiesData)
-
-      // Week range for debugging
-      console.log("📅 GLOBAL CALENDAR - Week range:", {
-        weekStart: format(weekStart, "yyyy-MM-dd"),
-        weekEnd: format(weekEnd, "yyyy-MM-dd")
-      })
 
       // Filter by week and recovery type
       let filteredActivities = activitiesData.filter((activity: any) => {
@@ -77,31 +69,16 @@ export default function ActivitiesPage() {
         const normalizedWeekEnd = new Date(weekEnd)
         normalizedWeekEnd.setHours(23, 59, 59, 999)
 
-        const inRange = activityDate >= normalizedWeekStart && activityDate <= normalizedWeekEnd
-
-        console.log(`📅 Activity ${activity.id}:`, {
-          date: activity.date,
-          formatted: format(activityDate, "yyyy-MM-dd"),
-          inRange,
-          activityDate: activityDate.getTime(),
-          weekStart: normalizedWeekStart.getTime(),
-          weekEnd: normalizedWeekEnd.getTime()
-        })
-
-        return inRange
+        return activityDate >= normalizedWeekStart && activityDate <= normalizedWeekEnd
       })
-
-      console.log("✅ GLOBAL CALENDAR - After week filter:", filteredActivities.length, filteredActivities)
 
       if (selectedType !== "all") {
         filteredActivities = filteredActivities.filter((activity: any) =>
           activity.recovery_type_id === selectedType
         )
-        console.log("✅ GLOBAL CALENDAR - After type filter:", filteredActivities.length)
       }
 
       setActivities(filteredActivities)
-      console.log("💾 GLOBAL CALENDAR - Final activities set:", filteredActivities.length)
 
     } catch (error) {
       toast({
@@ -116,19 +93,11 @@ export default function ActivitiesPage() {
 
   const getActivitiesForCell = (date: Date, module: number) => {
     const cellDateStr = format(date, "yyyy-MM-dd")
-    const result = activities.filter(activity => {
+    return activities.filter(activity => {
       const activityDate = new Date(activity.date)
       const activityDateStr = format(activityDate, "yyyy-MM-dd")
-      const match = activityDateStr === cellDateStr && activity.module_number === module
-
-      if (match) {
-        console.log(`🎯 CELL MATCH - Date: ${cellDateStr}, Module: ${module}`, activity)
-      }
-
-      return match
+      return activityDateStr === cellDateStr && activity.module_number === module
     })
-
-    return result
   }
 
   const previousWeek = () => setCurrentDate(subWeeks(currentDate, 1))
@@ -151,15 +120,6 @@ export default function ActivitiesPage() {
         <p className="text-muted-foreground">
           Vista calendario completa di tutte le attività - {schoolYear?.name}
         </p>
-      </div>
-
-      {/* Debug Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
-        <div className="font-medium text-blue-900 mb-1">🔍 Debug Info:</div>
-        <div className="text-blue-700">
-          Attività caricate: <strong>{activities.length}</strong> |
-          Settimana: <strong>{format(weekStart, "d MMM", { locale: it })} - {format(weekEnd, "d MMM yyyy", { locale: it })}</strong>
-        </div>
       </div>
 
       {/* Filters */}
