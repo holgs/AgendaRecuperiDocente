@@ -53,6 +53,7 @@ type Activity = {
   status: string
   module_number: number | null
   class_name: string | null
+  recovery_type_id: string
   recovery_type: {
     name: string
     color: string

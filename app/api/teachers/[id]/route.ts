@@ -87,7 +87,16 @@ export async function GET(
     const { data: activities, error: activitiesError } = await supabase
       .from('recovery_activities')
       .select(`
-        *,
+        id,
+        date,
+        duration_minutes,
+        modules_equivalent,
+        title,
+        description,
+        status,
+        module_number,
+        class_name,
+        recovery_type_id,
         recovery_type:recovery_types(name, color)
       `)
       .eq('teacher_id', teacherId)
