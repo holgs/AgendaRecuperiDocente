@@ -163,19 +163,27 @@ export async function POST(request: NextRequest) {
     // Create activity - duration always 50 minutes (1 module)
     console.log('📝 Creating activity...')
 
-    // TEMPORARY: Remove created_by to bypass FK issue for testing
+    // Find user in public.users by email for FK constraint
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', user.email)
+      .maybeSingle()
+
+    const publicUserId = existingUser?.id || user.id
+
     const activityData = {
       teacher_id,
       school_year_id,
       recovery_type_id,
-      date: dateStartISO,  // Use ISO timestamp (start of day) for consistency
+      date: dateStartISO,
       module_number,
       class_name,
-      title: `Recupero ${class_name} - Modulo ${module_number}`,  // Auto-generated title
+      title: `Recupero ${class_name} - Modulo ${module_number}`,
       duration_minutes: 50,
       modules_equivalent: 1,
-      status: 'planned'
-      // created_by: user.id  // Temporarily removed to test if FK is causing 500 error
+      status: 'planned',
+      created_by: publicUserId
     }
     console.log('📝 Activity data:', activityData)
 

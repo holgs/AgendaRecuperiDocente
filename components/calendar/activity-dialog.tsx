@@ -87,7 +87,7 @@ export function ActivityDialog({
     console.log('📤 Sending activity payload:', payload)
 
     try {
-      const response = await fetch("/api/test-activity", {
+      const response = await fetch("/api/activities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -208,7 +208,7 @@ export function ActivityDialog({
 
           {/* Error Message */}
           {error && (
-            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md whitespace-pre-wrap">
+            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
               {error}
             </div>
           )}
