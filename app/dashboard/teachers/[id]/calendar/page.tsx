@@ -20,7 +20,7 @@ export default function TeacherCalendarPage({ params }: { params: { id: string }
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewType, setViewType] = useState<"week" | "month">("week")
   const [displayMode, setDisplayMode] = useState<"grid" | "list">("grid")
-  const [calendarVariant, setCalendarVariant] = useState<"default" | "minimal" | "compact" | "cards" | "modern">("default")
+  const [calendarVariant, setCalendarVariant] = useState<"default" | "minimal" | "compact" | "cards" | "modern">("compact")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [selectedModule, setSelectedModule] = useState<number | undefined>()
