@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronLeft, ChevronRight, Filter } from "lucide-react"
+import { ChevronLeft, ChevronRight, Filter, Palette } from "lucide-react"
 import { startOfWeek, endOfWeek, addWeeks, subWeeks, format, addDays } from "date-fns"
 import { it } from "date-fns/locale"
 import { useToast } from "@/hooks/use-toast"
@@ -16,6 +16,7 @@ export default function ActivitiesPage() {
   const [recoveryTypes, setRecoveryTypes] = useState<any[]>([])
   const [selectedTeacher, setSelectedTeacher] = useState<string>("all")
   const [selectedType, setSelectedType] = useState<string>("all")
+  const [calendarStyle, setCalendarStyle] = useState<"default" | "modern">("default")
   const [schoolYear, setSchoolYear] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -185,6 +186,17 @@ export default function ActivitiesPage() {
             ))}
           </SelectContent>
         </Select>
+
+        <Select value={calendarStyle} onValueChange={(v: any) => setCalendarStyle(v)}>
+          <SelectTrigger className="w-[140px]">
+            <Palette className="h-4 w-4 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">Stile Default</SelectItem>
+            <SelectItem value="modern">Stile Modern</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Navigation */}
@@ -207,8 +219,14 @@ export default function ActivitiesPage() {
       </div>
 
       {/* Calendar Grid */}
-      <div className="border rounded-lg overflow-hidden">
-        <div className="grid grid-cols-6 divide-x bg-muted/50">
+      <div className={calendarStyle === "modern"
+        ? "border-0 bg-gradient-to-br from-muted/30 to-muted/10 p-1 rounded-lg overflow-hidden"
+        : "border rounded-lg overflow-hidden"
+      }>
+        <div className={calendarStyle === "modern"
+          ? "grid grid-cols-6 divide-x bg-gradient-to-r from-primary/5 to-primary/10 backdrop-blur-sm"
+          : "grid grid-cols-6 divide-x bg-muted/50"
+        }>
           <div className="p-3 text-center font-medium text-sm">Modulo</div>
           {weekDays.map((day) => (
             <div key={day.toISOString()} className="p-3 text-center">
@@ -220,22 +238,39 @@ export default function ActivitiesPage() {
 
         <div className="divide-y">
           {modules.map((module) => (
-            <div key={module} className="grid grid-cols-6 divide-x">
-              <div className="p-3 text-center bg-muted/30 font-medium text-sm">
+            <div key={module} className={calendarStyle === "modern"
+              ? "grid grid-cols-6 divide-x border-t border-border/50"
+              : "grid grid-cols-6 divide-x"
+            }>
+              <div className={calendarStyle === "modern"
+                ? "p-3 text-center bg-muted/30 font-medium text-sm"
+                : "p-3 text-center bg-muted/30 font-medium text-sm"
+              }>
                 {module}
               </div>
               {weekDays.map((day) => {
                 const cellActivities = getActivitiesForCell(day, module)
                 return (
-                  <div key={`${day.toISOString()}-${module}`} className="p-2 min-h-[80px]">
+                  <div key={`${day.toISOString()}-${module}`} className={calendarStyle === "modern"
+                    ? "p-2 min-h-[95px] backdrop-blur-sm"
+                    : "p-2 min-h-[80px]"
+                  }>
                     <div className="space-y-1">
                       {cellActivities.map((activity) => (
                         <div
                           key={activity.id}
-                          className={`text-xs p-2 rounded transition-opacity ${activity.status === 'completed' ? 'opacity-60' : ''}`}
+                          className={`text-xs p-2 rounded transition-opacity ${
+                            activity.status === 'completed' ? 'opacity-60' : ''
+                          } ${
+                            calendarStyle === "modern" ? 'backdrop-blur-sm border border-white/20' : ''
+                          }`}
                           style={{
-                            backgroundColor: activity.recovery_type?.color + '20',
-                            borderLeft: `3px solid ${activity.recovery_type?.color}`
+                            backgroundColor: calendarStyle === "modern"
+                              ? `linear-gradient(135deg, ${activity.recovery_type?.color}15, ${activity.recovery_type?.color}05)`
+                              : activity.recovery_type?.color + '20',
+                            borderLeft: calendarStyle === "modern"
+                              ? `4px solid ${activity.recovery_type?.color}`
+                              : `3px solid ${activity.recovery_type?.color}`
                           }}
                         >
                           <div className="flex items-start gap-2">

@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, ChevronLeft, ChevronRight, Plus, LayoutGrid, List, CheckCircle2 } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ArrowLeft, ChevronLeft, ChevronRight, Plus, LayoutGrid, List, CheckCircle2, Palette } from "lucide-react"
 import { startOfWeek, endOfWeek, addWeeks, subWeeks, format } from "date-fns"
 import { it } from "date-fns/locale"
 import { CalendarGrid } from "@/components/calendar/calendar-grid"
@@ -19,6 +20,7 @@ export default function TeacherCalendarPage({ params }: { params: { id: string }
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewType, setViewType] = useState<"week" | "month">("week")
   const [displayMode, setDisplayMode] = useState<"grid" | "list">("grid")
+  const [calendarVariant, setCalendarVariant] = useState<"default" | "minimal" | "compact" | "cards" | "modern">("default")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [selectedModule, setSelectedModule] = useState<number | undefined>()
@@ -234,6 +236,20 @@ export default function TeacherCalendarPage({ params }: { params: { id: string }
         </div>
 
         <div className="flex items-center gap-2">
+          <Select value={calendarVariant} onValueChange={(v: any) => setCalendarVariant(v)}>
+            <SelectTrigger className="w-[160px]">
+              <Palette className="h-4 w-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Default</SelectItem>
+              <SelectItem value="minimal">Minimal</SelectItem>
+              <SelectItem value="compact">Compact</SelectItem>
+              <SelectItem value="cards">Cards</SelectItem>
+              <SelectItem value="modern">Modern</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Button
             variant={displayMode === "grid" ? "default" : "outline"}
             size="icon"
@@ -267,6 +283,7 @@ export default function TeacherCalendarPage({ params }: { params: { id: string }
               onActivityClick={handleActivityClick}
               onDeleteActivity={handleDeleteActivity}
               onToggleComplete={handleToggleComplete}
+              variant={calendarVariant}
             />
           ) : (
             <CalendarList
