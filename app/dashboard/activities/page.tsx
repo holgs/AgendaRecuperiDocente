@@ -16,7 +16,7 @@ export default function ActivitiesPage() {
   const [recoveryTypes, setRecoveryTypes] = useState<any[]>([])
   const [selectedTeacher, setSelectedTeacher] = useState<string>("all")
   const [selectedType, setSelectedType] = useState<string>("all")
-  const [calendarStyle, setCalendarStyle] = useState<"default" | "modern">("default")
+  const [calendarStyle, setCalendarStyle] = useState<"default" | "minimal" | "compact" | "cards" | "modern">("compact")
   const [schoolYear, setSchoolYear] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -188,13 +188,16 @@ export default function ActivitiesPage() {
         </Select>
 
         <Select value={calendarStyle} onValueChange={(v: any) => setCalendarStyle(v)}>
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-[160px]">
             <Palette className="h-4 w-4 mr-2" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="default">Stile Default</SelectItem>
-            <SelectItem value="modern">Stile Modern</SelectItem>
+            <SelectItem value="default">Default</SelectItem>
+            <SelectItem value="minimal">Minimal</SelectItem>
+            <SelectItem value="compact">Compact</SelectItem>
+            <SelectItem value="cards">Cards</SelectItem>
+            <SelectItem value="modern">Modern</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -219,56 +222,133 @@ export default function ActivitiesPage() {
       </div>
 
       {/* Calendar Grid */}
-      <div className={calendarStyle === "modern"
-        ? "border-0 bg-gradient-to-br from-muted/30 to-muted/10 p-1 rounded-lg overflow-hidden"
-        : "border rounded-lg overflow-hidden"
+      <div className={
+        calendarStyle === "modern"
+          ? "border-0 bg-gradient-to-br from-muted/30 to-muted/10 p-1 rounded-lg overflow-hidden"
+          : calendarStyle === "minimal"
+          ? "border border-border/50 shadow-sm rounded-lg overflow-hidden"
+          : calendarStyle === "compact"
+          ? "border-2 border-border rounded-lg overflow-hidden"
+          : calendarStyle === "cards"
+          ? "border-0 rounded-lg overflow-hidden"
+          : "border rounded-lg overflow-hidden"
       }>
-        <div className={calendarStyle === "modern"
-          ? "grid grid-cols-6 divide-x bg-gradient-to-r from-primary/5 to-primary/10 backdrop-blur-sm"
-          : "grid grid-cols-6 divide-x bg-muted/50"
+        <div className={
+          calendarStyle === "modern"
+            ? "grid grid-cols-6 divide-x bg-gradient-to-r from-primary/5 to-primary/10 backdrop-blur-sm"
+            : calendarStyle === "minimal"
+            ? "grid grid-cols-6 divide-x bg-background border-b"
+            : calendarStyle === "compact"
+            ? "grid grid-cols-6 divide-x bg-muted/50"
+            : calendarStyle === "cards"
+            ? "grid grid-cols-6 divide-x bg-muted/30 border-b-2"
+            : "grid grid-cols-6 divide-x bg-muted/50"
         }>
-          <div className="p-3 text-center font-medium text-sm">Modulo</div>
+          <div className={
+            calendarStyle === "minimal"
+              ? "p-4 text-center font-semibold text-base"
+              : calendarStyle === "compact"
+              ? "p-2 text-center font-medium text-xs"
+              : calendarStyle === "cards"
+              ? "p-4 text-center font-medium text-sm"
+              : calendarStyle === "modern"
+              ? "p-3.5 text-center font-semibold text-sm"
+              : "p-3 text-center font-medium text-sm"
+          }>Modulo</div>
           {weekDays.map((day) => (
-            <div key={day.toISOString()} className="p-3 text-center">
-              <div className="font-medium">{format(day, "EEE", { locale: it })}</div>
-              <div className="text-sm text-muted-foreground">{format(day, "d MMM", { locale: it })}</div>
+            <div key={day.toISOString()} className={
+              calendarStyle === "minimal"
+                ? "p-4 text-center"
+                : calendarStyle === "compact"
+                ? "p-2 text-center"
+                : calendarStyle === "cards"
+                ? "p-4 text-center"
+                : calendarStyle === "modern"
+                ? "p-3.5 text-center"
+                : "p-3 text-center"
+            }>
+              <div className={
+                calendarStyle === "minimal"
+                  ? "font-semibold text-base mb-1"
+                  : calendarStyle === "compact"
+                  ? "font-semibold text-xs"
+                  : calendarStyle === "cards"
+                  ? "font-semibold text-sm mb-1"
+                  : calendarStyle === "modern"
+                  ? "font-semibold text-sm"
+                  : "font-medium"
+              }>{format(day, "EEE", { locale: it })}</div>
+              <div className={
+                calendarStyle === "minimal"
+                  ? "text-sm text-muted-foreground"
+                  : calendarStyle === "compact"
+                  ? "text-[10px] text-muted-foreground"
+                  : calendarStyle === "cards"
+                  ? "text-xs text-muted-foreground"
+                  : calendarStyle === "modern"
+                  ? "text-xs text-muted-foreground"
+                  : "text-sm text-muted-foreground"
+              }>{format(day, "d MMM", { locale: it })}</div>
             </div>
           ))}
         </div>
 
         <div className="divide-y">
           {modules.map((module) => (
-            <div key={module} className={calendarStyle === "modern"
-              ? "grid grid-cols-6 divide-x border-t border-border/50"
-              : "grid grid-cols-6 divide-x"
+            <div key={module} className={
+              calendarStyle === "modern"
+                ? "grid grid-cols-6 divide-x border-t border-border/50"
+                : calendarStyle === "cards"
+                ? "grid grid-cols-6 divide-x border-t-0 gap-px bg-muted/20"
+                : "grid grid-cols-6 divide-x border-t"
             }>
-              <div className={calendarStyle === "modern"
-                ? "p-3 text-center bg-muted/30 font-medium text-sm"
-                : "p-3 text-center bg-muted/30 font-medium text-sm"
+              <div className={
+                calendarStyle === "minimal"
+                  ? "p-3 text-center bg-background font-medium text-base"
+                  : calendarStyle === "compact"
+                  ? "p-2 text-center bg-muted/50 font-medium text-xs"
+                  : calendarStyle === "cards"
+                  ? "p-3 text-center bg-muted/40 font-medium text-sm border-r-0"
+                  : calendarStyle === "modern"
+                  ? "p-3 text-center bg-muted/30 font-medium text-sm"
+                  : "p-3 text-center bg-muted/30 font-medium text-sm"
               }>
                 {module}
               </div>
               {weekDays.map((day) => {
                 const cellActivities = getActivitiesForCell(day, module)
                 return (
-                  <div key={`${day.toISOString()}-${module}`} className={calendarStyle === "modern"
-                    ? "p-2 min-h-[95px] backdrop-blur-sm"
-                    : "p-2 min-h-[80px]"
+                  <div key={`${day.toISOString()}-${module}`} className={
+                    calendarStyle === "minimal"
+                      ? "p-2 min-h-[100px]"
+                      : calendarStyle === "compact"
+                      ? "p-1.5 min-h-[60px]"
+                      : calendarStyle === "cards"
+                      ? "p-2 min-h-[110px] bg-background m-px rounded-lg"
+                      : calendarStyle === "modern"
+                      ? "p-2 min-h-[95px] backdrop-blur-sm"
+                      : "p-2 min-h-[80px]"
                   }>
                     <div className="space-y-1">
                       {cellActivities.map((activity) => (
                         <div
                           key={activity.id}
-                          className={`text-xs p-2 rounded transition-opacity ${
-                            activity.status === 'completed' ? 'opacity-60' : ''
-                          } ${
-                            calendarStyle === "modern" ? 'backdrop-blur-sm border border-white/20' : ''
-                          }`}
+                          className={
+                            calendarStyle === "minimal"
+                              ? `text-xs p-3 rounded border border-border/40 transition-opacity ${activity.status === 'completed' ? 'opacity-60' : ''}`
+                              : calendarStyle === "compact"
+                              ? `text-xs p-1.5 rounded transition-opacity ${activity.status === 'completed' ? 'opacity-60' : ''}`
+                              : calendarStyle === "cards"
+                              ? `text-xs p-3 rounded shadow-sm hover:shadow-md transition-all ${activity.status === 'completed' ? 'opacity-60' : ''}`
+                              : calendarStyle === "modern"
+                              ? `text-xs p-2.5 rounded backdrop-blur-sm border border-white/20 transition-opacity ${activity.status === 'completed' ? 'opacity-60' : ''}`
+                              : `text-xs p-2 rounded transition-opacity ${activity.status === 'completed' ? 'opacity-60' : ''}`
+                          }
                           style={{
                             backgroundColor: calendarStyle === "modern"
                               ? `linear-gradient(135deg, ${activity.recovery_type?.color}15, ${activity.recovery_type?.color}05)`
                               : activity.recovery_type?.color + '20',
-                            borderLeft: calendarStyle === "modern"
+                            borderLeft: calendarStyle === "cards" || calendarStyle === "modern"
                               ? `4px solid ${activity.recovery_type?.color}`
                               : `3px solid ${activity.recovery_type?.color}`
                           }}
