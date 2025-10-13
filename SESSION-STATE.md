@@ -2,12 +2,18 @@
 
 **Date**: 2025-01-13
 **Session ID**: teacher-self-service-implementation
-**Current Phase**: Phase 3 - Backend Implementation (45% complete)
+**Current Phase**: ✅ Phase 3 Complete → Phase 4 Ready
+**Progress**: Backend 100% | Frontend 0%
 **Branch**: `feature/teacher-self-service`
+**Local Commits**: 2 (f84ec25, bdd4271) - Ready to push
 
 ## 🎯 Project Goal
 
 Implement Google Workspace SSO authentication for teachers (@piaggia.it domain) to enable self-service activity planning and tracking.
+
+## 🎉 Phase 3 - Backend Implementation: COMPLETE ✅
+
+All 13 backend tasks completed successfully in this session!
 
 ## ✅ Completed Work (Session Summary)
 
@@ -100,15 +106,52 @@ Implement Google Workspace SSO authentication for teachers (@piaggia.it domain) 
 - ✅ `docs/architecture/teacher-authentication.md` - Technical architecture
 - ✅ `docs/setup/google-oauth-setup.md` - OAuth configuration guide
 
+### 10. Teacher Activities API Endpoints (100% Complete) ✅
+**Files Created**:
+- ✅ `app/api/teachers/me/activities/route.ts` (GET, POST methods)
+- ✅ `app/api/teachers/me/activities/[id]/route.ts` (PATCH, DELETE methods)
+- ✅ `app/api/teachers/me/activities/[id]/complete/route.ts` (PATCH method)
+
+**Endpoints Implemented**:
+1. ✅ **GET /api/teachers/me/activities** - List teacher's activities
+   - Query params: school_year_id, status (planned/completed/all)
+   - Returns activities with recovery_type and school_year joins
+   - Includes summary statistics (total, planned, completed, modules)
+
+2. ✅ **POST /api/teachers/me/activities** - Create activity
+   - Budget validation (checks available modules)
+   - Overlap detection: Teacher (blocks), Class (warning only)
+   - Automatic budget deduction
+   - Atomic operation with rollback on failure
+
+3. ✅ **PATCH /api/teachers/me/activities/[id]** - Update planned activity
+   - Allows: date, module_number, class_name, description
+   - Blocks editing completed activities (immutable)
+   - Re-validates overlaps if date/module changed
+   - Ownership verification
+
+4. ✅ **DELETE /api/teachers/me/activities/[id]** - Delete planned activity
+   - Blocks deleting completed activities
+   - Automatic budget refund (modules + minutes)
+   - Returns refunded amounts
+
+5. ✅ **PATCH /api/teachers/me/activities/[id]/complete** - Toggle completion
+   - Request: `{ "completed": true/false }`
+   - No budget changes (already deducted at creation)
+   - Idempotent operation
+
+**Business Logic Implemented**:
+- Budget enforcement: 1 module = 50 minutes (configurable)
+- Overlap rules: Teacher-blocking, Class-warning
+- Activity lifecycle: planned → editable/deletable | completed → immutable
+- Security: requireTeacher() auth, ownership verification, scoped queries
+
 ---
 
-## 🚧 Work In Progress / Next Tasks
+## 🚧 Next Tasks: Phase 4 - Frontend Implementation
 
-### Phase 3: Backend API Endpoints (Remaining: 5 endpoints)
-
-#### Priority 1: GET /api/teachers/me/activities
-**File to create**: `app/api/teachers/me/activities/route.ts`
-**Purpose**: List teacher's recovery activities with optional filters
+### Task 1: Update Login Page with Google SSO
+**File to modify**: `app/login/page.tsx`
 **Requirements**:
 - Use `requireTeacher()` for auth
 - Query `recovery_activities` filtered by `teacher_id` (from auth user)
