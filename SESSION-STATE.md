@@ -2,10 +2,11 @@
 
 **Date**: 2025-01-13
 **Session ID**: teacher-self-service-implementation
-**Current Phase**: ✅ Phase 3 Complete → Phase 4 Ready
-**Progress**: Backend 100% | Frontend 0%
+**Current Phase**: ✅ Phase 3 Complete + Deployed → Phase 4 Ready
+**Progress**: Backend 100% ✅ | Frontend 0%
 **Branch**: `feature/teacher-self-service`
-**Local Commits**: 2 (f84ec25, bdd4271) - Ready to push
+**GitHub**: ✅ Pushed (commit 5cdcc83)
+**Database**: ✅ Migration applied to Supabase
 
 ## 🎯 Project Goal
 
@@ -404,8 +405,15 @@ docs/
 ```
 supabase/
 └── migrations/
-    └── 20250113_teacher_auth_setup.sql  # DB schema updates
+    └── 20250113_teacher_auth_setup.sql  # ✅ Applied to Supabase
 ```
+
+**Migration Applied Successfully**:
+- ✅ Role constraint updated: `users.role IN ('admin', 'teacher')`
+- ✅ Index created: `idx_teachers_email` (for OAuth provisioning)
+- ✅ Index created: `idx_teachers_user_id` (for reverse lookups)
+- ✅ Index created: `idx_users_email` (for authentication)
+- ✅ Documentation comments added to columns
 
 ### Backend
 ```
@@ -434,23 +442,76 @@ lib/
 
 ---
 
+## 🚀 Deployment Status (2025-01-13)
+
+### ✅ Completed Deployments
+
+1. **GitHub Push**: Successfully pushed to `feature/teacher-self-service` branch
+   - Commit: `5cdcc83c02966f330fb792b90596d8f05f596fd3`
+   - All backend files uploaded
+   - Documentation included
+   - Ready for PR review
+
+2. **Database Migration**: Successfully applied to Supabase production
+   - Role constraint: `users.role` now accepts 'admin' and 'teacher'
+   - Performance indexes created (3 indexes)
+   - Column documentation added
+   - Verified via SQL query
+
+### 🔧 Configuration Still Required
+
+**IMPORTANT**: Before testing, complete these manual steps:
+
+1. **Google OAuth Setup** (School IT Department)
+   - Create OAuth Client ID/Secret in Google Cloud Console
+   - Configure redirect URIs
+   - Enable Google provider in Supabase Dashboard
+   - Follow guide: `docs/setup/google-oauth-setup.md`
+
+2. **Teacher Email Verification** (Admin)
+   - Run audit: `SELECT * FROM teachers WHERE email IS NULL OR email NOT LIKE '%@piaggia.it'`
+   - Update any missing/invalid emails
+   - Ensure all teachers have valid @piaggia.it emails
+
+3. **Environment Variables** (DevOps)
+   - Verify `NEXT_PUBLIC_SUPABASE_URL` is set
+   - Verify `NEXT_PUBLIC_SUPABASE_ANON_KEY` is set
+   - Add `NEXT_PUBLIC_APP_URL` for OAuth redirect
+
+### 🧪 Testing Checklist
+
+Once configuration is complete:
+- [ ] Test Google OAuth login with @piaggia.it account
+- [ ] Test domain restriction (non-@piaggia.it rejected)
+- [ ] Test teacher provisioning (first login creates user)
+- [ ] Test budget gate (teacher without budget → access denied)
+- [ ] Test API: GET /api/teachers/me (returns profile + budget)
+- [ ] Test API: GET /api/teachers/me/activities (returns activities list)
+- [ ] Test API: POST /api/teachers/me/activities (creates activity)
+- [ ] Test budget deduction after activity creation
+- [ ] Test overlap detection (teacher-blocking, class-warning)
+- [ ] Test role-based routing (teacher → /dashboard/teacher)
+
+---
+
 ## 🔄 Next Session: Resume From Here
 
-**Start with**: Implementing the 5 teacher activity API endpoints in this order:
-1. GET /api/teachers/me/activities
-2. POST /api/teachers/me/activities
-3. PATCH /api/teachers/me/activities/[id]
-4. DELETE /api/teachers/me/activities/[id]
-5. PATCH /api/teachers/me/activities/[id]/complete
+**Phase 4: Frontend Implementation** (0% complete)
 
-**Reference files**:
-- Existing pattern: `app/api/teachers/me/route.ts`
+**Priority Tasks**:
+1. Update login page with Google SSO button
+2. Create teacher dashboard layout (`/dashboard/teacher`)
+3. Build budget overview widget
+4. Implement activities list/calendar view
+5. Create activity CRUD forms
+
+**Reference Files**:
+- Backend APIs: All 5 endpoints ready in `/api/teachers/me/*`
 - Auth utilities: `lib/auth/roles.ts`
-- Budget logic example: Check existing `app/api/activities/route.ts` for overlap detection
-
-**Time estimate**: 4-6 hours for all 5 endpoints
+- Existing admin UI patterns: `/app/dashboard/*`
 
 ---
 
 **Session End**: 2025-01-13
-**Next Action**: Create branch + commit + push, then continue with activities API endpoints
+**Status**: Phase 3 Complete + Deployed ✅ | Phase 4 Ready to Start
+**Next Action**: Begin frontend implementation or wait for OAuth configuration
