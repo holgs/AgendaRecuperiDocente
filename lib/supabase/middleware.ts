@@ -35,18 +35,51 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Redirect to dashboard if logged in and on login page
+  // Get user role for authenticated users
+  let userRole: 'admin' | 'teacher' | null = null
+  if (user) {
+    const { data: publicUser } = await supabase
+      .from('users')
+      .select('role')
+      .eq('email', user.email)
+      .single()
+
+    userRole = publicUser?.role as 'admin' | 'teacher' | null
+  }
+
+  // Redirect authenticated users from login page to appropriate dashboard
   if (user && request.nextUrl.pathname === '/login') {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = userRole === 'teacher' ? '/dashboard/teacher' : '/dashboard'
     return NextResponse.redirect(url)
   }
 
-  // Redirect to login if not logged in and on protected routes
+  // Redirect unauthenticated users from protected routes
   if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
+  }
+
+  // Role-based route protection
+  if (user && userRole) {
+    const pathname = request.nextUrl.pathname
+
+    // Teachers can only access /dashboard/teacher routes
+    if (userRole === 'teacher' && pathname.startsWith('/dashboard') && !pathname.startsWith('/dashboard/teacher')) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard/teacher'
+      return NextResponse.redirect(url)
+    }
+
+    // Admins cannot access the teacher self-service area (/dashboard/teacher but NOT /dashboard/teachers)
+    // /dashboard/teacher = teacher self-service area
+    // /dashboard/teachers = admin page to manage teachers
+    if (userRole === 'admin' && pathname === '/dashboard/teacher') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
   }
 
   // Protected routes - require authentication
