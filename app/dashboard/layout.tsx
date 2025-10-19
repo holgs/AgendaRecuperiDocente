@@ -22,6 +22,15 @@ export default async function DashboardLayout({
     redirect("/login")
   }
 
+  // Get user role from public.users table
+  const { data: publicUser } = await supabase
+    .from('users')
+    .select('role')
+    .eq('email', user.email)
+    .single()
+
+  const userRole = (publicUser?.role as 'admin' | 'teacher') || 'admin'
+
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
@@ -35,7 +44,7 @@ export default async function DashboardLayout({
 
           {/* Navigation */}
           <div className="flex-1 overflow-auto p-4">
-            <DashboardNav />
+            <DashboardNav userRole={userRole} />
           </div>
 
           {/* Footer */}

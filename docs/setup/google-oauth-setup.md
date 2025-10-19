@@ -38,8 +38,7 @@ This guide explains how to configure Google Workspace authentication for teacher
      - `https://ziytqufymrbkchbbonra.supabase.co/auth/v1/callback` (Supabase callback)
 5. Click **Create**
 6. **Save** the **Client ID** and **Client Secret** (you'll need these next)
-7. Client ID: 223061598879-3acj3a7k2p66oq24am4a0qud8rb76rj9.apps.googleusercontent.com <---NON CANCELLARE>
-8. Client Secret: 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 <---NON CANCELLARE>
+   - Note: Store these credentials securely - they should not be committed to version control
 
 ## Step 2: Configure Supabase Authentication
 
@@ -53,12 +52,12 @@ This guide explains how to configure Google Workspace authentication for teacher
 ### 2.2 Configure Google Provider Settings
 
 1. Enter the credentials from Step 1.2:
-   - **Client ID**: `223061598879-3acj3a7k2p66oq24am4a0qud8rb76rj9.apps.googleusercontent.com`
-   - **Client Secret**: `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`
+   - **Client ID**: Paste your Google OAuth Client ID here
+   - **Client Secret**: Paste your Google OAuth Client Secret here
 2. **Redirect URL**: Il sistema mostrerà automaticamente:
-   - **Redirect URL**: Copy the value shown (e.g., `https://<project-ref>.supabase.co/auth/v1/callback`): https://ziytqufymrbkchbbonra.supabase.co/auth/v1/callback.   <---NON CANCELLARE>
+   - **Redirect URL**: Copy the value shown (e.g., `https://<project-ref>.supabase.co/auth/v1/callback`)
 
-   - Assicurati che questo URL (`https://ziytqufymrbkchbbonra.supabase.co/auth/v1/callback`) sia presente nella lista degli **Authorized redirect URIs** in Google Cloud Console (Step 1.2)
+   - Assicurati che questo URL sia presente nella lista degli **Authorized redirect URIs** in Google Cloud Console (Step 1.2)
 3. Click **Save**
 
 **IMPORTANTE**: Il parametro `hd=piaggia.it` per restringere l'accesso al solo dominio @piaggia.it **NON si configura nel Supabase Dashboard**. Questo parametro verrà configurato direttamente nel codice dell'applicazione (vedi Step 4 qui sotto).

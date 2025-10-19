@@ -100,7 +100,7 @@ export function TeacherEditDialog({ teacher, onSuccess }: TeacherEditDialogProps
           <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px]" onClick={(e) => e.stopPropagation()}>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Modifica Docente</DialogTitle>
