@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { DashboardNav } from "@/components/dashboard-nav"
+import { MobileNav } from "@/components/mobile-nav"
 import { UserNav } from "@/components/user-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Separator } from "@/components/ui/separator"
@@ -61,8 +62,9 @@ export default async function DashboardLayout({
         {/* Header */}
         <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
           <div className="flex flex-1 items-center justify-between">
-            <div className="flex items-center gap-4">
-              {/* Mobile menu would go here */}
+            <div className="flex items-center gap-2">
+              {/* Mobile menu */}
+              <MobileNav userRole={userRole} />
               <h1 className="text-lg font-semibold lg:hidden">
                 Tracking Recuperi
               </h1>
