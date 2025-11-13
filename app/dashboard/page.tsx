@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useToast } from "@/components/ui/use-toast"
-import { Users, BookOpen, Activity, TrendingUp, Loader2, Upload } from "lucide-react"
+import { Users, BookOpen, Activity, TrendingUp, Loader2, Upload, Download } from "lucide-react"
 
 type DashboardData = {
   totalTeachers: number
@@ -72,6 +72,54 @@ export default function DashboardPage() {
     }
   }
 
+  async function handleDownloadReport() {
+    try {
+      toast({
+        title: 'Download in corso',
+        description: 'Generazione del report...'
+      })
+
+      const response = await fetch('/api/reports/export')
+
+      if (!response.ok) {
+        throw new Error('Failed to download report')
+      }
+
+      // Get filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let filename = 'report_attivita.csv'
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/)
+        if (filenameMatch) {
+          filename = filenameMatch[1]
+        }
+      }
+
+      // Create blob and download
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+
+      toast({
+        title: 'Download completato',
+        description: 'Il report è stato scaricato con successo'
+      })
+    } catch (error) {
+      console.error('Error downloading report:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Errore',
+        description: 'Impossibile scaricare il report'
+      })
+    }
+  }
+
   if (isLoading || !data) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -89,12 +137,18 @@ export default function DashboardPage() {
             Panoramica generale del sistema tracking recuperi
           </p>
         </div>
-        <Link href="/dashboard/import">
-          <Button>
-            <Upload className="mr-2 h-4 w-4" />
-            Importa Tesoretti
+        <div className="flex gap-2">
+          <Button onClick={handleDownloadReport} variant="outline">
+            <Download className="mr-2 h-4 w-4" />
+            Scarica Report
           </Button>
-        </Link>
+          <Link href="/dashboard/import">
+            <Button>
+              <Upload className="mr-2 h-4 w-4" />
+              Importa Tesoretti
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats Cards */}
