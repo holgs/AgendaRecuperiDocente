@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useToast } from "@/components/ui/use-toast"
-import { Users, BookOpen, Activity, TrendingUp, Loader2, Upload } from "lucide-react"
+import { Users, BookOpen, Activity, TrendingUp, Loader2, Upload, Download } from "lucide-react"
 
 type DashboardData = {
   totalTeachers: number
@@ -72,6 +72,56 @@ export default function DashboardPage() {
     }
   }
 
+  async function downloadActivityReport() {
+    try {
+      const response = await fetch('/api/reports/activities-export')
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch report data')
+      }
+
+      const reportData = await response.json()
+
+      // Convert to CSV
+      const headers = ['NOME', 'COGNOME', 'Moduli da Recuperare', 'Moduli Recuperati', 'Percentuale']
+      const csvRows = [headers.join(';')]
+
+      reportData.data.forEach((row: any) => {
+        const values = [
+          row.nome,
+          row.cognome,
+          row.moduliDaRecuperare,
+          row.moduliRecuperati,
+          row.percentuale
+        ]
+        csvRows.push(values.join(';'))
+      })
+
+      const csvContent = csvRows.join('\n')
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `report_attivita_${reportData.schoolYear}_${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      toast({
+        title: 'Report scaricato',
+        description: 'Il report delle attività è stato scaricato con successo'
+      })
+    } catch (error) {
+      console.error('Error downloading report:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Errore',
+        description: 'Impossibile scaricare il report delle attività'
+      })
+    }
+  }
+
   if (isLoading || !data) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -89,12 +139,18 @@ export default function DashboardPage() {
             Panoramica generale del sistema tracking recuperi
           </p>
         </div>
-        <Link href="/dashboard/import">
-          <Button>
-            <Upload className="mr-2 h-4 w-4" />
-            Importa Tesoretti
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={downloadActivityReport}>
+            <Download className="mr-2 h-4 w-4" />
+            Scarica Report
           </Button>
-        </Link>
+          <Link href="/dashboard/import">
+            <Button>
+              <Upload className="mr-2 h-4 w-4" />
+              Importa Tesoretti
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats Cards */}
