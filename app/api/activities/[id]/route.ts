@@ -22,7 +22,7 @@ export async function PUT(
     // Get current activity
     const { data: currentActivity, error: fetchError } = await supabase
       .from('recovery_activities')
-      .select('*, teacher_budgets!inner(modules_used, minutes_used, modules_annual, minutes_annual)')
+      .select('*')
       .eq('id', id)
       .single()
 
@@ -125,6 +125,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = params
     const body = await request.json()
     const { status } = body
 
@@ -132,7 +133,7 @@ export async function PATCH(
     const { data: activity, error: updateError } = await supabase
       .from('recovery_activities')
       .update({ status })
-      .eq('id', params.id)
+      .eq('id', id)
       .select(`
         *,
         teacher:teachers (cognome, nome),
@@ -168,10 +169,10 @@ export async function DELETE(
 
     const { id } = params
 
-    // Get activity to restore budget
+    // Get activity first
     const { data: activity, error: fetchError } = await supabase
       .from('recovery_activities')
-      .select('*, teacher_budgets!inner(*)')
+      .select('*')
       .eq('id', id)
       .single()
 
@@ -200,8 +201,24 @@ export async function DELETE(
       throw deleteError
     }
 
+    // Fetch the budget separately to restore it
+    const { data: budget, error: budgetError } = await supabase
+      .from('teacher_budgets')
+      .select('*')
+      .eq('teacher_id', activity.teacher_id)
+      .eq('school_year_id', activity.school_year_id)
+      .single()
+
+    if (budgetError || !budget) {
+      console.error('Budget not found for restoration:', budgetError)
+      // Don't fail the delete, just log the error
+      return NextResponse.json({
+        success: true,
+        warning: 'Attività eliminata ma budget non aggiornato'
+      })
+    }
+
     // Restore budget
-    const budget = activity.teacher_budgets
     const { error: updateError } = await supabase
       .from('teacher_budgets')
       .update({
