@@ -1,0 +1,242 @@
+# Session State - 2025-10-05
+
+## 🎯 Obiettivo Corrente
+Implementare e testare varianti stilistiche del calendario per esperimenti UI sul branch `ui-experiments`.
+
+## ✅ Lavoro Completato
+
+### 1. Setup Repository e Branch
+- ✅ Chiuse PR aperte (#1, #3, #4) create da Codex
+- ✅ Creato branch `ui-experiments` da `main` (SHA: 3baf58f)
+- ⚠️ Branch vecchi ancora presenti (da eliminare manualmente):
+  - `calendar-feature`
+  - `codex/add-variant-prop-to-getstatusinfo`
+  - `codex/add-export-helpers-for-data-table`
+  - `codex/analyze-repository-code-for-deployment-issue`
+  - `codex/replace-textarea-with-rich-text-editor`
+
+### 2. Implementazione Varianti Calendario
+Implementate **5 varianti stilistiche** per il componente CalendarGrid:
+
+#### File Modificati Localmente (NON ancora su GitHub):
+1. **`components/calendar/calendar-grid.tsx`** (428 righe)
+   - Aggiunti import: `cva`, `VariantProps`, `Calendar`, `Tag` icons
+   - Creati 4 CVA variants: `containerVariants`, `headerVariants`, `cellVariants`, `activityCardVariants`
+   - Prop `variant?: "default" | "minimal" | "compact" | "cards" | "modern"`
+   - Funzioni helper: `renderEmptyCell()`, `renderActivity()`
+   - Responsive sizing per ogni variante
+   - Conditional rendering basato su variant
+
+2. **`app/dashboard/teachers/[id]/calendar/page.tsx`** (323 righe)
+   - Aggiunti import: `Select`, `Palette` icon
+   - Nuovo state: `calendarVariant` con tipo corretto
+   - Select dropdown con 5 opzioni (Default, Minimal, Compact, Cards, Modern)
+   - Passato prop `variant={calendarVariant}` a CalendarGrid
+
+3. **`app/dashboard/activities/page.tsx`** (322 righe)
+   - Aggiunti import: `Palette` icon
+   - Nuovo state: `calendarStyle` ("default" | "modern")
+   - Select dropdown con 2 opzioni (Stile Default, Stile Modern)
+   - Applicati stili condizionali inline per container, header, celle, activity cards
+
+#### Varianti Implementate:
+
+**1. Default**
+- Design originale pulito
+- Border standard
+- Min-height: 80px celle
+- Padding: 2
+
+**2. Minimal**
+- Spacious, moderno
+- Border sottili (border/50)
+- Shadow leggere
+- Min-height: 100px
+- Icone calendario su celle vuote
+- Font più grandi
+
+**3. Compact**
+- Denso, efficiente
+- Border doppi (border-2)
+- Min-height: 60px (ridotta)
+- Padding ridotto (1.5)
+- Font piccoli (text-xs)
+- Nessuna icona su celle vuote
+
+**4. Cards**
+- Floating card design
+- No border container
+- Shadow pronunciate
+- Min-height: 110px
+- Gap tra celle (m-px)
+- Hover scale effect
+- Tag icon per tipo recupero
+- "Aggiungi" button su celle vuote
+
+**5. Modern**
+- Gradient backgrounds
+- Glassmorphism effects
+- Border white/20
+- Min-height: 95px
+- Backdrop blur
+- Linear gradient per activity cards
+- Border-left 4px
+- Tipo recupero colorato
+
+### 3. Commit Locale Creato
+```
+commit 4dde747794cd27ee93ec316a9589d83b2d663b22
+Author: Claude Code <claude@anthropic.com>
+Date:   Sun Oct 5 08:50:17 2025 +0200
+
+feat: Add multiple calendar style variants for UI experimentation
+```
+
+File nel commit:
+- `app/dashboard/activities/page.tsx`
+- `app/dashboard/teachers/[id]/calendar/page.tsx`
+- `components/calendar/calendar-grid.tsx`
+
+## ⚠️ Problema Corrente
+
+**Il commit locale esiste ma NON è stato pushato su GitHub.**
+
+- Commit locale: `4dde747` su branch `ui-experiments`
+- GitHub remote: branch `ui-experiments` esiste ma NON ha le modifiche
+- Verifica: File su GitHub ancora vecchi (senza Select, senza variant prop)
+- Causa: `git push` richiede autenticazione, MCP GitHub push ha limitazioni sui file grandi
+
+## 🔧 Soluzione Necessaria
+
+### Opzione A: Push Manuale (Consigliata)
+```bash
+cd /mnt/c/Users/ORARIO/Desktop/code/AgendaRecuperiDocente
+git push origin ui-experiments
+# Username: holgs
+# Password: <GitHub Personal Access Token>
+```
+
+### Opzione B: Creare Pull Request
+Usare MCP GitHub per creare PR da `ui-experiments` → `main`, Vercel deploierà automaticamente.
+
+## 📋 Regole e Best Practices Stabilite
+
+### Git & GitHub Protocol
+1. **SEMPRE usare server MCP GitHub** per operazioni Git quando possibile
+2. **NON usare comandi git locali** per push/commit se MCP disponibile
+3. **Branch naming**: `ui-experiments` per esperimenti UI
+4. **Commit message format**:
+   ```
+   feat: Titolo breve
+
+   Descrizione dettagliata con:
+   - Bullet points
+   - **Bold** per enfasi
+
+   🎨 UI Experiments on ui-experiments branch
+
+   🤖 Generated with [Claude Code](...)
+   Co-Authored-By: Claude <noreply@anthropic.com>
+   ```
+
+### TODO Management
+- ✅ **SEMPRE aggiornare TODO-IMPLEMENTATION.md** dopo completamento
+- ✅ **CHIEDERE CONFERMA** all'utente prima di aggiornare TODO
+- ✅ **Workflow**: Implementa → Testa → Verifica → **CHIEDI** → Aggiorna TODO
+- ✅ Aggiorna TODO SOLO quando tutto funziona correttamente
+
+### Code Style
+- **TypeScript** strict mode
+- **Tailwind CSS** utilities
+- **shadcn/ui** components
+- **CVA** (class-variance-authority) per variants
+- **Responsive first** design
+- **Accessibility** (contrast, focus states)
+
+### Testing Strategy
+- Test locale: `npm run dev`
+- Build test: `npm run build`
+- Lint test: `npm run lint`
+- Deploy preview: Vercel su branch
+
+## 📁 File Structure
+
+```
+AgendaRecuperiDocente/
+├── app/
+│   ├── api/
+│   │   ├── activities/[id]/route.ts (PATCH per status, DELETE)
+│   │   ├── activities/route.ts (GET, POST)
+│   │   ├── school-years/active/route.ts (GET active year)
+│   │   └── teachers/[id]/route.ts (GET con recovery_type_id)
+│   └── dashboard/
+│       ├── activities/page.tsx (Calendario globale + style selector)
+│       └── teachers/[id]/
+│           ├── page.tsx (Dettaglio docente)
+│           └── calendar/page.tsx (Calendario docente + variant selector)
+├── components/
+│   └── calendar/
+│       ├── calendar-grid.tsx (5 varianti CVA)
+│       ├── calendar-list.tsx
+│       └── activity-dialog.tsx
+├── CLAUDE.md (Istruzioni progetto)
+├── TODO-IMPLEMENTATION.md (Task tracking)
+└── SESSION-STATE.md (Questo file)
+```
+
+## 🔄 Prossimi Passi
+
+1. **Push modifiche** a GitHub (Opzione A o B)
+2. **Attendere deploy** Vercel su ui-experiments
+3. **Testare varianti** sul deploy preview
+4. **Raccogliere feedback** utente
+5. **Raffinare stili** in base a preferenze
+6. **Merge su main** quando soddisfatto
+7. **Eliminare branch vecchi** manualmente su GitHub
+
+## 💡 Note Tecniche
+
+### Dependencies Usate
+- `class-variance-authority` (CVA) - già installata
+- `lucide-react` - icons (Calendar, Tag, Palette)
+- `@/components/ui/select` - shadcn Select component
+- `date-fns` - date formatting
+
+### Performance Considerations
+- Variants CSS puri (no JS overhead)
+- Conditional rendering ottimizzato
+- Memoization non necessaria (componente piccolo)
+- Tailwind JIT compilation
+
+### Browser Compatibility
+- Modern browsers (ES6+)
+- CSS Grid support required
+- Backdrop-blur support (modern variant)
+- CSS gradients support
+
+## 📊 Stato Repository
+
+**Branch locale**: `ui-experiments` (in sync con commit 4dde747)
+**Branch remoto**: `ui-experiments` (OUTDATED - manca commit)
+**Branch main**: `3baf58f` (ultimo deploy funzionante)
+
+**Files modified locally** (non committed):
+```
+M app/api/activities/route.ts
+M app/api/teachers/[id]/route.ts
+M app/api/test-activity/route.ts
+M app/dashboard/teachers/[id]/page.tsx
+M components/ui/calendar.tsx
+M components/ui/dialog.tsx
+M components/ui/popover.tsx
+M components/ui/select.tsx
+M package.json
+```
+
+**Untracked**:
+```
+?? TEST
+?? app/dashboard/calendar-variants/
+?? docs/
+?? hooks/
+```

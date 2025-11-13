@@ -10,9 +10,11 @@ import {
   FileText,
   Upload,
   Settings,
+  BookOpen,
 } from "lucide-react"
 
-const navItems = [
+// Admin navigation items
+const adminNavItems = [
   {
     title: "Dashboard",
     href: "/dashboard",
@@ -45,14 +47,33 @@ const navItems = [
   },
 ]
 
-export function DashboardNav() {
+// Teacher navigation items
+const teacherNavItems = [
+  {
+    title: "Dashboard",
+    href: "/dashboard/teacher",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Le Mie Attività",
+    href: "/dashboard/teacher",
+    icon: BookOpen,
+  },
+]
+
+type DashboardNavProps = {
+  userRole?: 'admin' | 'teacher'
+}
+
+export function DashboardNav({ userRole = 'admin' }: DashboardNavProps) {
   const pathname = usePathname()
+  const navItems = userRole === 'teacher' ? teacherNavItems : adminNavItems
 
   return (
     <nav className="grid items-start gap-2">
       {navItems.map((item) => {
         const Icon = item.icon
-        const isActive = pathname === item.href
+        const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
 
         return (
           <Link

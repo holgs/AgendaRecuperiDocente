@@ -38,15 +38,21 @@ export function UserNav({ user }: UserNavProps) {
   async function handleLogout() {
     try {
       const supabase = createClient()
-      await supabase.auth.signOut()
+
+      // Logout with global scope to revoke OAuth provider sessions
+      await supabase.auth.signOut({ scope: 'global' })
+
+      // Clear browser storage to remove any cached data
+      localStorage.clear()
+      sessionStorage.clear()
 
       toast({
         title: "Logout effettuato",
         description: "Alla prossima!",
       })
 
-      router.push("/login")
-      router.refresh()
+      // Force full page reload to ensure complete logout
+      window.location.href = "/login"
     } catch (error) {
       console.error("Logout error:", error)
       toast({
