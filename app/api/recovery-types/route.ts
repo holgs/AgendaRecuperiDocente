@@ -84,29 +84,38 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    console.log('Received body:', JSON.stringify(body, null, 2))
+
     const validatedData = recoveryTypeSchema.parse(body)
+    console.log('Validated data:', JSON.stringify(validatedData, null, 2))
+
+    const insertData = {
+      name: validatedData.name,
+      description: validatedData.description ?? null,
+      color: validatedData.color,
+      default_duration: validatedData.default_duration ?? null,
+      requires_approval: validatedData.requires_approval,
+      is_active: validatedData.is_active,
+      created_by: user.id
+    }
+    console.log('Insert data:', JSON.stringify(insertData, null, 2))
 
     const { data: recoveryType, error: createError } = await supabase
       .from('recovery_types')
-      .insert({
-        name: validatedData.name,
-        description: validatedData.description ?? null,
-        color: validatedData.color,
-        default_duration: validatedData.default_duration ?? null,
-        requires_approval: validatedData.requires_approval,
-        is_active: validatedData.is_active,
-        created_by: user.id
-      })
+      .insert(insertData)
       .select()
       .single()
 
     if (createError) {
+      console.error('Supabase insert error:', createError)
       throw createError
     }
 
+    console.log('Successfully created recovery type:', recoveryType)
     return NextResponse.json(recoveryType, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('Zod validation error:', error.errors)
       return NextResponse.json(
         { error: 'Validation error', details: error.errors },
         { status: 400 }
