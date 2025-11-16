@@ -83,6 +83,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Ensure user exists in users table
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+
+    if (!existingUser) {
+      // Create user if doesn't exist
+      await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          email: user.email!,
+          role: 'admin'
+        })
+    }
+
     const body = await request.json()
     const validatedData = recoveryTypeSchema.parse(body)
 
