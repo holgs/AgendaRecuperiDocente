@@ -83,28 +83,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Ensure user exists in users table (upsert approach)
-    try {
-      const { error: upsertError } = await supabase
-        .from('users')
-        .upsert({
-          id: user.id,
-          email: user.email!,
-          role: 'admin'
-        }, {
-          onConflict: 'id',
-          ignoreDuplicates: false
-        })
-
-      if (upsertError) {
-        console.error('Warning: Could not upsert user:', upsertError)
-        // Continue anyway - user might already exist
-      }
-    } catch (userError) {
-      console.error('Warning: Error upserting user:', userError)
-      // Continue anyway
-    }
-
     const body = await request.json()
     const validatedData = recoveryTypeSchema.parse(body)
 
