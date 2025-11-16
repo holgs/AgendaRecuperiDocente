@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Plus, Loader2, Search } from "lucide-react"
+import { Plus, Loader2, Search, Download } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { TeacherEditDialog } from "@/components/teachers/teacher-edit-dialog"
 
@@ -48,6 +48,7 @@ export default function TeachersPage() {
   const [data, setData] = useState<TeachersData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
+  const [isExporting, setIsExporting] = useState(false)
 
   useEffect(() => {
     fetchTeachers()
@@ -94,6 +95,47 @@ export default function TeachersPage() {
     router.push(`/dashboard/teachers/${teacherId}`)
   }
 
+  async function handleExportCSV() {
+    setIsExporting(true)
+    try {
+      const response = await fetch('/api/reports/export-csv')
+
+      if (!response.ok) {
+        throw new Error('Export failed')
+      }
+
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition')
+      const filenameMatch = contentDisposition?.match(/filename="(.+)"/)
+      const filename = filenameMatch ? filenameMatch[1] : 'report_docenti.csv'
+
+      // Download file
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast({
+        title: 'Export completato',
+        description: 'Il file CSV è stato scaricato con successo'
+      })
+    } catch (error) {
+      console.error('Error exporting CSV:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Errore',
+        description: 'Impossibile esportare i dati in CSV'
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -112,10 +154,24 @@ export default function TeachersPage() {
             {data?.activeYear && ` - Anno ${data.activeYear.name}`}
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Nuovo Docente
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleExportCSV}
+            disabled={isExporting || !data?.teachers.length}
+          >
+            {isExporting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
+            Esporta CSV
+          </Button>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Nuovo Docente
+          </Button>
+        </div>
       </div>
 
       {/* Search Bar */}
