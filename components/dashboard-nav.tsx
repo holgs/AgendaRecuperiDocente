@@ -54,11 +54,6 @@ const teacherNavItems = [
     href: "/dashboard/teacher",
     icon: LayoutDashboard,
   },
-  {
-    title: "Le Mie Attività",
-    href: "/dashboard/teacher",
-    icon: BookOpen,
-  },
 ]
 
 type DashboardNavProps = {
