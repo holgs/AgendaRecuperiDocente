@@ -129,9 +129,15 @@ export default function RecoveryTypesPage() {
 
     try {
       const payload = {
-        ...formData,
+        name: formData.name,
+        description: formData.description.trim() || undefined,
+        color: formData.color,
         default_duration: formData.default_duration ? parseInt(formData.default_duration) : null,
+        requires_approval: formData.requires_approval,
+        is_active: formData.is_active,
       }
+
+      console.log("Sending payload:", payload)
 
       const url = editingType
         ? `/api/recovery-types/${editingType.id}`
@@ -143,6 +149,8 @@ export default function RecoveryTypesPage() {
         body: JSON.stringify(payload),
       })
 
+      console.log("Response status:", response.status)
+
       if (response.ok) {
         toast({
           title: editingType ? "Tipologia aggiornata" : "Tipologia creata",
@@ -152,10 +160,11 @@ export default function RecoveryTypesPage() {
         fetchTypes()
       } else {
         const error = await response.json()
+        console.error("API error:", error)
         toast({
           variant: "destructive",
           title: "Errore",
-          description: error.error || "Operazione fallita",
+          description: error.error || error.details || "Operazione fallita",
         })
       }
     } catch (error) {
