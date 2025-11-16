@@ -85,7 +85,9 @@ export async function POST(request: NextRequest) {
 
     // Ensure user exists in users table
     // This is needed because auth.users and public.users are separate tables
-    const { error: insertUserError } = await supabase
+    console.log('🔍 Attempting to create/verify user:', { id: user.id, email: user.email })
+
+    const { data: insertedUser, error: insertUserError } = await supabase
       .from('users')
       .insert({
         id: user.id,
@@ -95,10 +97,35 @@ export async function POST(request: NextRequest) {
       .select()
       .maybeSingle()
 
-    // Ignore duplicate key errors (code 23505) - user already exists
-    if (insertUserError && insertUserError.code !== '23505') {
-      console.warn('Could not auto-create user in users table:', insertUserError)
-      // Continue anyway - the user might exist despite the error
+    console.log('📝 User insert result:', { insertedUser, insertUserError })
+
+    // If insert failed with duplicate key error (23505), user already exists - this is OK
+    if (insertUserError && insertUserError.code === '23505') {
+      console.log('✅ User already exists (duplicate key), continuing...')
+    } else if (insertUserError) {
+      // Any other error is problematic - we need to understand why
+      console.error('❌ Failed to create user in users table:', JSON.stringify(insertUserError, null, 2))
+
+      // Check if user actually exists despite the error
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      console.log('🔍 Checked if user exists:', { existingUser, checkError })
+
+      if (!existingUser) {
+        // User doesn't exist and we couldn't create it - this will fail later
+        return NextResponse.json({
+          error: 'Cannot create recovery type - user account not initialized',
+          details: `Failed to create user in users table: ${insertUserError.message}`,
+          hint: 'Please contact administrator',
+          code: insertUserError.code
+        }, { status: 500 })
+      }
+    } else {
+      console.log('✅ User created successfully in users table')
     }
 
     const body = await request.json()
