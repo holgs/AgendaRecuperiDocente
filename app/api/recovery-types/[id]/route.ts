@@ -84,7 +84,10 @@ export async function PUT(
     if (validatedData.name !== undefined) updateData.name = validatedData.name
     if (validatedData.description !== undefined) updateData.description = validatedData.description ?? null
     if (validatedData.color !== undefined) updateData.color = validatedData.color
-    if (validatedData.default_duration !== undefined) updateData.default_duration = validatedData.default_duration ?? null
+    // Only update default_duration if it has a value (not null/undefined)
+    if (validatedData.default_duration !== undefined && validatedData.default_duration !== null) {
+      updateData.default_duration = validatedData.default_duration
+    }
     if (validatedData.requires_approval !== undefined) updateData.requires_approval = validatedData.requires_approval
     if (validatedData.is_active !== undefined) updateData.is_active = validatedData.is_active
 

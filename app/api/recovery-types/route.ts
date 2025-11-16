@@ -100,6 +100,21 @@ export async function POST(request: NextRequest) {
     }
     console.log('Insert data:', JSON.stringify(insertData, null, 2))
 
+    // Build insert payload conditionally
+    const insertData: any = {
+      name: validatedData.name,
+      description: validatedData.description ?? null,
+      color: validatedData.color,
+      requires_approval: validatedData.requires_approval,
+      is_active: validatedData.is_active,
+      created_by: user.id
+    }
+
+    // Only include default_duration if it's provided
+    if (validatedData.default_duration !== null && validatedData.default_duration !== undefined) {
+      insertData.default_duration = validatedData.default_duration
+    }
+
     const { data: recoveryType, error: createError } = await supabase
       .from('recovery_types')
       .insert(insertData)
