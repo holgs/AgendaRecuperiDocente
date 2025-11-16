@@ -219,7 +219,10 @@ export default function RecoveryTypesPage() {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingType(null)}>
+            <Button onClick={() => {
+              setEditingType(null)
+              setFormData(initialFormData)
+            }}>
               <Plus className="mr-2 h-4 w-4" />
               Nuova Tipologia
             </Button>
