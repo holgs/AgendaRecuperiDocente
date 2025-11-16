@@ -107,24 +107,38 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (createError) {
-      console.error('Supabase insert error:', createError)
-      throw createError
+      console.error('❌ Supabase insert error FULL DETAILS:', JSON.stringify(createError, null, 2))
+      return NextResponse.json(
+        {
+          error: createError.message || 'Database error',
+          details: createError.details || 'No details available',
+          hint: createError.hint || 'No hint available',
+          code: createError.code || 'Unknown code'
+        },
+        { status: 500 }
+      )
     }
 
-    console.log('Successfully created recovery type:', recoveryType)
+    console.log('✅ Successfully created recovery type:', recoveryType)
     return NextResponse.json(recoveryType, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error('Zod validation error:', error.errors)
+      console.error('❌ Zod validation error:', error.errors)
       return NextResponse.json(
         { error: 'Validation error', details: error.errors },
         { status: 400 }
       )
     }
 
-    console.error('Error creating recovery type:', error)
+    console.error('❌ Error creating recovery type FULL:', error)
+    const errorObj = error as any
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      {
+        error: errorObj.message || 'Internal server error',
+        details: errorObj.details || 'No details',
+        hint: errorObj.hint || 'No hint',
+        code: errorObj.code || 'No code'
+      },
       { status: 500 }
     )
   }

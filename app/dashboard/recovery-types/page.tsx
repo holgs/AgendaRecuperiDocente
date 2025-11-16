@@ -160,11 +160,24 @@ export default function RecoveryTypesPage() {
         fetchTypes()
       } else {
         const error = await response.json()
-        console.error("API error:", error)
+        console.error("❌ API error FULL:", error)
+
+        // Mostra tutti i dettagli disponibili
+        let errorDescription = error.error || "Operazione fallita"
+        if (error.details && error.details !== 'No details available') {
+          errorDescription += `\n\nDettagli: ${error.details}`
+        }
+        if (error.hint && error.hint !== 'No hint available') {
+          errorDescription += `\n\nSuggerimento: ${error.hint}`
+        }
+        if (error.code && error.code !== 'No code' && error.code !== 'Unknown code') {
+          errorDescription += `\n\nCodice: ${error.code}`
+        }
+
         toast({
           variant: "destructive",
-          title: "Errore",
-          description: error.error || error.details || "Operazione fallita",
+          title: "Errore durante il salvataggio",
+          description: errorDescription,
         })
       }
     } catch (error) {
