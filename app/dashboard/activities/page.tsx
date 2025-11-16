@@ -209,7 +209,7 @@ export default function ActivitiesPage() {
       {/* Calendar Grid */}
       <div className="border rounded-lg overflow-hidden">
         <div className="grid grid-cols-6 divide-x bg-muted/50">
-          <div className="p-3 text-center font-medium text-sm">Modulo</div>
+          <div className="p-3 text-center font-medium text-sm">Unità Oraria</div>
           {weekDays.map((day) => (
             <div key={day.toISOString()} className="p-3 text-center">
               <div className="font-medium">{format(day, "EEE", { locale: it })}</div>

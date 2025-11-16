@@ -414,7 +414,7 @@ export default function TeacherDashboardPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Data</TableHead>
-                  <TableHead>Modulo</TableHead>
+                  <TableHead>Unità Oraria</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Classe</TableHead>
                   <TableHead>Titolo</TableHead>

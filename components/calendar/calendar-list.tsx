@@ -102,7 +102,7 @@ export function CalendarList({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">
-                              Modulo {activity.module_number}
+                              Unità Oraria {activity.module_number}
                             </span>
                             <span className="text-muted-foreground">•</span>
                             <span className="font-semibold">

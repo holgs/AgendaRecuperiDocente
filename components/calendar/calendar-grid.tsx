@@ -71,8 +71,8 @@ export function CalendarGrid({
   return (
     <div className="border rounded-lg overflow-hidden">
       {/* Header with days */}
-      <div className="grid grid-cols-[80px_repeat(5,1fr)] bg-muted">
-        <div className="p-3 border-r font-semibold text-sm">Modulo</div>
+      <div className="grid grid-cols-[120px_repeat(5,1fr)] bg-muted">
+        <div className="p-3 border-r font-semibold text-sm">Unità Oraria</div>
         {days.map((day) => (
           <div key={day.toISOString()} className="p-3 border-r last:border-r-0 text-center">
             <div className="font-semibold text-sm">
@@ -87,7 +87,7 @@ export function CalendarGrid({
 
       {/* Grid with modules */}
       {modules.map((module) => (
-        <div key={module} className="grid grid-cols-[80px_repeat(5,1fr)] border-t">
+        <div key={module} className="grid grid-cols-[120px_repeat(5,1fr)] border-t">
           <div className="p-3 border-r font-medium text-sm bg-muted/30 flex items-center justify-center">
             {module}
           </div>
