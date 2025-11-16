@@ -8,7 +8,10 @@ const updateRecoveryTypeSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Invalid color format').optional(),
-  default_duration: z.number().int().min(1).max(300).nullable().optional(),
+  default_duration: z.union([
+    z.number().int().min(1).max(300),
+    z.null()
+  ]).optional(),
   requires_approval: z.boolean().optional(),
   is_active: z.boolean().optional()
 })
