@@ -256,6 +256,11 @@ export default function ActivitiesPage() {
                               <div className="text-xs opacity-75 truncate">
                                 {activity.recovery_type?.name}
                               </div>
+                              {activity.co_teacher_name && (
+                                <div className="text-xs opacity-75 truncate italic">
+                                  con {activity.co_teacher_name}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

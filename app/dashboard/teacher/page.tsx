@@ -189,6 +189,38 @@ export default function TeacherDashboardPage() {
     }
   }
 
+  async function handleToggleComplete(activityId: string, currentStatus: string) {
+    const newStatus = currentStatus === 'completed' ? 'planned' : 'completed'
+
+    try {
+      const response = await fetch(`/api/activities/${activityId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Errore durante l\'aggiornamento')
+      }
+
+      toast({
+        title: 'Successo',
+        description: newStatus === 'completed' ? 'Attività completata' : 'Attività riaperta',
+      })
+
+      // Refresh activities
+      fetchActivities()
+    } catch (error) {
+      console.error('Error toggling activity status:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Errore',
+        description: error instanceof Error ? error.message : 'Impossibile aggiornare l\'attività',
+      })
+    }
+  }
+
   function handleActivitySuccess() {
     toast({
       title: 'Successo',
@@ -455,6 +487,24 @@ export default function TeacherDashboardPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant={activity.status === 'completed' ? 'outline' : 'default'}
+                          size="sm"
+                          onClick={() => handleToggleComplete(activity.id, activity.status)}
+                          title={activity.status === 'completed' ? 'Riapri attività' : 'Segna come completata'}
+                        >
+                          {activity.status === 'completed' ? (
+                            <>
+                              <Clock className="h-4 w-4 mr-2" />
+                              Riapri
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                              Completa
+                            </>
+                          )}
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"

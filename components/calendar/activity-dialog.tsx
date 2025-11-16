@@ -62,7 +62,7 @@ export function ActivityDialog({
         const response = await fetch('/api/teachers')
         if (response.ok) {
           const data = await response.json()
-          setTeachers(data)
+          setTeachers(data.teachers || [])
         }
       } catch (err) {
         console.error('Error fetching teachers:', err)
@@ -157,19 +157,25 @@ export function ActivityDialog({
         setWarning(data.warning)
       }
 
+      // Close dialog first
+      onOpenChange(false)
+
+      // Then call onSuccess to refresh data
+      onSuccess(!isEditMode)
+
+      // Reset form state after closing (only in create mode)
       if (!isEditMode) {
-        // Only persist in create mode
         setPersistedClassName(className)
         setPersistedRecoveryTypeId(recoveryTypeId)
 
-        // Reset only date and module (classe and tipo restano)
-        setDate(undefined)
-        setModuleNumber("")
+        // Reset fields will happen when dialog reopens via useEffect
+        setTimeout(() => {
+          setDate(undefined)
+          setModuleNumber("")
+          setError("")
+          setWarning("")
+        }, 100)
       }
-
-      // Increment session counter only when creating (not editing)
-      onSuccess(!isEditMode)
-      onOpenChange(false)
     } catch (err) {
       setError("Errore di connessione")
     } finally {
