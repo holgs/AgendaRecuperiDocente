@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useToast } from "@/components/ui/use-toast"
+import { ActivityDialog } from "@/components/calendar/activity-dialog"
 import {
   Loader2,
   BookOpen,
@@ -81,10 +82,14 @@ export default function TeacherDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [activities, setActivities] = useState<Activity[]>([])
   const [isLoadingActivities, setIsLoadingActivities] = useState(true)
+  const [showActivityDialog, setShowActivityDialog] = useState(false)
+  const [recoveryTypes, setRecoveryTypes] = useState<Array<{ id: string; name: string; color: string }>>([])
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null)
 
   useEffect(() => {
     fetchDashboardData()
     fetchActivities()
+    fetchRecoveryTypes()
   }, [])
 
   async function fetchDashboardData() {
@@ -131,6 +136,26 @@ export default function TeacherDashboardPage() {
     }
   }
 
+  async function fetchRecoveryTypes() {
+    try {
+      const response = await fetch('/api/recovery-types')
+
+      if (!response.ok) {
+        throw new Error('Errore nel caricamento dei tipi di recupero')
+      }
+
+      const types = await response.json()
+      setRecoveryTypes(types)
+    } catch (error) {
+      console.error('Error fetching recovery types:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Errore',
+        description: 'Impossibile caricare i tipi di recupero',
+      })
+    }
+  }
+
   async function handleDeleteActivity(activityId: string) {
     if (!confirm('Sei sicuro di voler eliminare questa attività?')) {
       return
@@ -162,6 +187,27 @@ export default function TeacherDashboardPage() {
         description: error instanceof Error ? error.message : 'Impossibile eliminare l\'attività',
       })
     }
+  }
+
+  function handleActivitySuccess() {
+    toast({
+      title: 'Successo',
+      description: 'Attività salvata con successo',
+    })
+    // Refresh both budget and activities
+    fetchDashboardData()
+    fetchActivities()
+    setEditingActivity(null)
+  }
+
+  function handleCreateActivity() {
+    setEditingActivity(null)
+    setShowActivityDialog(true)
+  }
+
+  function handleEditActivity(activity: Activity) {
+    setEditingActivity(activity)
+    setShowActivityDialog(true)
   }
 
   function getBudgetStatusVariant(percentage: number): "default" | "secondary" | "destructive" {
@@ -342,6 +388,7 @@ export default function TeacherDashboardPage() {
               </CardDescription>
             </div>
             <Button
+              onClick={handleCreateActivity}
               disabled={budget.modules_remaining === 0}
               title={budget.modules_remaining === 0 ? 'Budget esaurito' : 'Crea nuova attività'}
             >
@@ -411,6 +458,7 @@ export default function TeacherDashboardPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => handleEditActivity(activity)}
                           disabled={activity.status === 'completed'}
                           title={activity.status === 'completed' ? 'Impossibile modificare attività completata' : 'Modifica'}
                         >
@@ -434,6 +482,19 @@ export default function TeacherDashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Activity Dialog */}
+      {data && data.currentBudget && (
+        <ActivityDialog
+          open={showActivityDialog}
+          onOpenChange={setShowActivityDialog}
+          teacherId={data.teacher.id}
+          schoolYearId={data.currentBudget.school_year_id}
+          recoveryTypes={recoveryTypes}
+          activity={editingActivity}
+          onSuccess={handleActivitySuccess}
+        />
+      )}
     </div>
   )
 }
