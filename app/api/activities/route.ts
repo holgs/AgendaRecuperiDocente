@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     console.log('📦 Request body:', body)
-    const { teacher_id, date, module_number, class_name, recovery_type_id, school_year_id } = body
+    const { teacher_id, date, module_number, class_name, recovery_type_id, school_year_id, co_teacher_name } = body
 
     // Validation: Required fields
     if (!teacher_id || !date || !module_number || !class_name) {
@@ -179,11 +179,12 @@ export async function POST(request: NextRequest) {
       date: dateStartISO,
       module_number,
       class_name,
-      title: `Recupero ${class_name} - Modulo ${module_number}`,
+      title: `Recupero ${class_name} - Unità Oraria ${module_number}`,
       duration_minutes: 50,
       modules_equivalent: 1,
       status: 'planned',
-      created_by: publicUserId
+      created_by: publicUserId,
+      co_teacher_name: co_teacher_name || null
     }
     console.log('📝 Activity data:', activityData)
 

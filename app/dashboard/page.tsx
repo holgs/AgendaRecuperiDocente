@@ -237,7 +237,7 @@ export default function DashboardPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Data</TableHead>
-                  <TableHead>Modulo</TableHead>
+                  <TableHead>Unità Oraria</TableHead>
                   <TableHead>Docente</TableHead>
                   <TableHead>Attività</TableHead>
                   <TableHead>Tipo</TableHead>

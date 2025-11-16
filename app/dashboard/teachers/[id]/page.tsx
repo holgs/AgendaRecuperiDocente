@@ -253,12 +253,12 @@ export default function TeacherDetailPage({ params }: { params: { id: string } }
               <TableHeader>
                 <TableRow>
                   <TableHead>Data</TableHead>
-                  <TableHead>Modulo</TableHead>
+                  <TableHead>Unità Oraria</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Classe</TableHead>
                   <TableHead>Titolo</TableHead>
                   <TableHead className="text-right">Durata</TableHead>
-                  <TableHead className="text-right">Moduli</TableHead>
+                  <TableHead className="text-right">Unità Orarie</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>

@@ -17,7 +17,7 @@ export async function PUT(
 
     const { id } = params
     const body = await request.json()
-    const { date, module_number, class_name, recovery_type_id } = body
+    const { date, module_number, class_name, recovery_type_id, co_teacher_name } = body
 
     // Get current activity
     const { data: currentActivity, error: fetchError } = await supabase
@@ -85,6 +85,7 @@ export async function PUT(
         module_number,
         class_name,
         recovery_type_id,
+        co_teacher_name: co_teacher_name || null,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
