@@ -83,6 +83,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Ensure user exists in users table
+    // This is needed because auth.users and public.users are separate tables
+    const { error: insertUserError } = await supabase
+      .from('users')
+      .insert({
+        id: user.id,
+        email: user.email!,
+        role: 'admin'
+      })
+      .select()
+      .maybeSingle()
+
+    // Ignore duplicate key errors (code 23505) - user already exists
+    if (insertUserError && insertUserError.code !== '23505') {
+      console.warn('Could not auto-create user in users table:', insertUserError)
+      // Continue anyway - the user might exist despite the error
+    }
+
     const body = await request.json()
     const validatedData = recoveryTypeSchema.parse(body)
 
