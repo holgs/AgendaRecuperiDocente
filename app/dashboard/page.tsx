@@ -15,6 +15,17 @@ import {
 } from "@/components/ui/table"
 import { useToast } from "@/components/ui/use-toast"
 import { Users, BookOpen, Activity, TrendingUp, Loader2, Upload, Download } from "lucide-react"
+import { useSortableTable, type SortAccessors } from "@/hooks/use-sortable-table"
+import { SortableTableHead } from "@/components/ui/sortable-table-head"
+
+const weeklySortAccessors: SortAccessors<any> = {
+  date: (a) => a.date,
+  module_number: (a) => a.module_number,
+  teacher: (a) => `${a.teacher?.cognome ?? ""} ${a.teacher?.nome ?? ""}`.trim(),
+  title: (a) => a.title,
+  type: (a) => a.recovery_type?.name,
+  status: (a) => a.status,
+}
 
 type DashboardData = {
   totalTeachers: number
@@ -31,6 +42,9 @@ export default function DashboardPage() {
   const { toast } = useToast()
   const [data, setData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  const { sorted: sortedWeekly, sortKey, sortDirection, requestSort } =
+    useSortableTable(data?.weeklyActivities ?? [], weeklySortAccessors)
 
   useEffect(() => {
     fetchDashboardData()
@@ -236,16 +250,16 @@ export default function DashboardPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Unità Oraria</TableHead>
-                  <TableHead>Docente</TableHead>
-                  <TableHead>Attività</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Stato</TableHead>
+                  <SortableTableHead label="Data" sortKey="date" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Unità Oraria" sortKey="module_number" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Docente" sortKey="teacher" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Attività" sortKey="title" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Tipo" sortKey="type" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Stato" sortKey="status" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.weeklyActivities.map((activity) => {
+                {sortedWeekly.map((activity) => {
                   const activityDate = new Date(activity.date)
                   const teacher = activity.teacher
                   const recoveryType = activity.recovery_type
