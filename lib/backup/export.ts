@@ -25,6 +25,45 @@ export interface YearExport {
 
 export const EXPORT_FORMAT_VERSION = 1
 
+// PostgREST caps a single SELECT at 1000 rows by default, so a plain query would
+// silently truncate large tables. We page through in chunks to fetch everything.
+const PAGE_SIZE = 1000
+
+/**
+ * Fetch every row for `table` matching school_year_id, following PostgREST
+ * pagination so nothing is silently truncated at 1000 rows.
+ */
+async function fetchAllForYear(
+  supabase: SupabaseClient,
+  table: string,
+  select: string,
+  schoolYearId: string
+): Promise<Record<string, unknown>[]> {
+  const all: Record<string, unknown>[] = []
+  let from = 0
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { data, error } = await supabase
+      .from(table)
+      .select(select)
+      .eq('school_year_id', schoolYearId)
+      .order('id', { ascending: true })
+      .range(from, from + PAGE_SIZE - 1)
+
+    if (error) {
+      throw new Error(`Errore nel recupero di ${table}`)
+    }
+
+    const rows = (data ?? []) as unknown as Record<string, unknown>[]
+    all.push(...rows)
+    if (rows.length < PAGE_SIZE) break
+    from += PAGE_SIZE
+  }
+
+  return all
+}
+
 /**
  * Build a complete export object for one school year.
  * Throws a plain Error (message safe to log server-side) on failure.
@@ -43,34 +82,24 @@ export async function buildYearExport(
     throw new Error('Anno scolastico non trovato')
   }
 
-  const { data: budgets, error: bError } = await supabase
-    .from('teacher_budgets')
-    .select(`
-      *,
-      teacher:teachers ( cognome, nome, email )
-    `)
-    .eq('school_year_id', schoolYearId)
+  const teacher_budgets = await fetchAllForYear(
+    supabase,
+    'teacher_budgets',
+    `*, teacher:teachers ( cognome, nome, email )`,
+    schoolYearId
+  )
 
-  if (bError) {
-    throw new Error('Errore nel recupero dei tesoretti')
-  }
+  const recovery_activities = await fetchAllForYear(
+    supabase,
+    'recovery_activities',
+    `*, teacher:teachers ( cognome, nome, email ), recovery_type:recovery_types ( name )`,
+    schoolYearId
+  )
 
-  const { data: activities, error: aError } = await supabase
-    .from('recovery_activities')
-    .select(`
-      *,
-      teacher:teachers ( cognome, nome, email ),
-      recovery_type:recovery_types ( name )
-    `)
-    .eq('school_year_id', schoolYearId)
-    .order('date', { ascending: true })
-
-  if (aError) {
-    throw new Error('Errore nel recupero delle attività')
-  }
-
-  const teacher_budgets = budgets ?? []
-  const recovery_activities = activities ?? []
+  // Paginated fetch is ordered by id for stable paging; present activities by date.
+  recovery_activities.sort((a, b) =>
+    String(a.date ?? '').localeCompare(String(b.date ?? ''))
+  )
 
   return {
     meta: {
