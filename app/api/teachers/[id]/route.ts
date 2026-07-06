@@ -114,9 +114,11 @@ export async function GET(
     }
 
     if (budgetStats) {
-      // All figures in MINUTES (Punto 3)
-      activityStats.toPlan = budgetStats.minutesAvailable
-
+      // All figures in MINUTES (Punto 3). The budget is consumed at creation time,
+      // so minutesUsed already includes BOTH planned and completed activities.
+      // Therefore the decomposition is:
+      //   annual = daPianificare + pianificati + recuperati
+      //   daPianificare = minutesAvailable (= annual - used), no extra subtraction.
       if (activities && activities.length > 0) {
         activities.forEach((activity: any) => {
           const minutes = activity.duration_minutes || 0
@@ -126,10 +128,9 @@ export async function GET(
             activityStats.completed += minutes
           }
         })
-
-        // "To plan" = still-available minutes minus what is already planned
-        activityStats.toPlan = Math.max(0, budgetStats.minutesAvailable - activityStats.planned)
       }
+
+      activityStats.toPlan = Math.max(0, budgetStats.minutesAvailable)
     }
 
     return NextResponse.json({
