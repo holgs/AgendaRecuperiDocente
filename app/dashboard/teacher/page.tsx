@@ -29,6 +29,7 @@ import {
 } from "lucide-react"
 import { format } from "date-fns"
 import { it } from "date-fns/locale"
+import { formatHoursMinutes } from "@/lib/time"
 
 type BudgetData = {
   id: string
@@ -330,7 +331,7 @@ export default function TeacherDashboardPage() {
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium">Utilizzo Complessivo</span>
               <span className="text-muted-foreground">
-                {budget.modules_used} / {budget.modules_annual} moduli
+                {formatHoursMinutes(budget.minutes_used)} / {formatHoursMinutes(budget.minutes_annual)}
               </span>
             </div>
             <Progress value={budget.percentage_used} className="h-3" />
@@ -341,28 +342,28 @@ export default function TeacherDashboardPage() {
             </div>
           </div>
 
-          {/* Stats Grid */}
+          {/* Stats Grid (minutes) */}
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Moduli Totali</p>
-              <p className="text-2xl font-bold">{budget.modules_annual}</p>
+              <p className="text-sm text-muted-foreground">Monte ore annuo</p>
+              <p className="text-2xl font-bold">{formatHoursMinutes(budget.minutes_annual)}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Moduli Usati</p>
+              <p className="text-sm text-muted-foreground">Recuperato</p>
               <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {budget.modules_used}
+                {formatHoursMinutes(budget.minutes_used)}
               </p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Moduli Disponibili</p>
+              <p className="text-sm text-muted-foreground">Ancora da recuperare</p>
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {budget.modules_remaining}
+                {formatHoursMinutes(budget.minutes_remaining)}
               </p>
             </div>
           </div>
 
           {/* Warning for low budget */}
-          {budget.modules_remaining === 0 && (
+          {budget.minutes_remaining <= 0 && (
             <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
               <p className="text-sm font-medium text-destructive">
                 ⚠️ Budget esaurito: non puoi creare nuove attività. Contatta l'amministrazione.

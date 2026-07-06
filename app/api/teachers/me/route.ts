@@ -73,9 +73,10 @@ export async function GET() {
 
       const minutesRemaining = budgetData.minutes_annual - (budgetData.minutes_used || 0)
       const modulesRemaining = budgetData.modules_annual - (budgetData.modules_used || 0)
+      // Minutes are the single source of truth (Punto 3)
       const percentageUsed =
-        budgetData.modules_annual > 0
-          ? Math.round(((budgetData.modules_used || 0) / budgetData.modules_annual) * 100)
+        budgetData.minutes_annual > 0
+          ? Math.round(((budgetData.minutes_used || 0) / budgetData.minutes_annual) * 100)
           : 0
 
       currentBudget = {

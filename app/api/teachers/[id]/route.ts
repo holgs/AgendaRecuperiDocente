@@ -71,15 +71,18 @@ export async function GET(
       const modulesUsed = budget.modules_used || 0
       const modulesAvailable = modulesAnnual - modulesUsed
 
+      const minutesAnnual = budget.minutes_annual || 0
+      const minutesUsed = budget.minutes_used || 0
       budgetStats = {
         id: budget.id,
         modulesAnnual,
         modulesUsed,
         modulesAvailable,
-        minutesAnnual: budget.minutes_annual || 0,
-        minutesUsed: budget.minutes_used || 0,
-        minutesAvailable: (budget.minutes_annual || 0) - (budget.minutes_used || 0),
-        percentageUsed: modulesAnnual > 0 ? Math.round((modulesUsed / modulesAnnual) * 100) : 0,
+        minutesAnnual,
+        minutesUsed,
+        minutesAvailable: minutesAnnual - minutesUsed,
+        // Minutes are the single source of truth (Punto 3)
+        percentageUsed: minutesAnnual > 0 ? Math.round((minutesUsed / minutesAnnual) * 100) : 0,
       }
     }
 
@@ -111,22 +114,21 @@ export async function GET(
     }
 
     if (budgetStats) {
-      // To plan = modules available without activities
-      activityStats.toPlan = budgetStats.modulesAvailable
+      // All figures in MINUTES (Punto 3)
+      activityStats.toPlan = budgetStats.minutesAvailable
 
       if (activities && activities.length > 0) {
-        // Count planned and completed modules
         activities.forEach((activity: any) => {
-          const modulesEquivalent = (activity.duration_minutes || 0) / 50
+          const minutes = activity.duration_minutes || 0
           if (activity.status === 'planned') {
-            activityStats.planned += modulesEquivalent
+            activityStats.planned += minutes
           } else if (activity.status === 'completed') {
-            activityStats.completed += modulesEquivalent
+            activityStats.completed += minutes
           }
         })
 
-        // Adjust "to plan" by subtracting planned activities
-        activityStats.toPlan = Math.max(0, budgetStats.modulesAvailable - activityStats.planned)
+        // "To plan" = still-available minutes minus what is already planned
+        activityStats.toPlan = Math.max(0, budgetStats.minutesAvailable - activityStats.planned)
       }
     }
 

@@ -258,7 +258,6 @@ export default function TeacherDetailPage({ params }: { params: { id: string } }
                   <TableHead>Classe</TableHead>
                   <TableHead>Titolo</TableHead>
                   <TableHead className="text-right">Durata</TableHead>
-                  <TableHead className="text-right">Unità Orarie</TableHead>
                   <TableHead>Stato</TableHead>
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
@@ -293,9 +292,6 @@ export default function TeacherDetailPage({ params }: { params: { id: string } }
                     </TableCell>
                     <TableCell className="text-right">
                       {activity.duration_minutes} min
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {activity.modules_equivalent?.toFixed(1) || '0.0'}
                     </TableCell>
                     <TableCell>
                       <Badge variant={getStatusBadgeVariant(activity.status)}>
