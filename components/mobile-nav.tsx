@@ -24,6 +24,7 @@ import {
   GraduationCap,
   Archive,
   Clock,
+  UserCog,
 } from "lucide-react"
 
 // Admin navigation items
@@ -42,6 +43,11 @@ const adminNavItems = [
     title: "Attività Recupero",
     href: "/dashboard/activities",
     icon: Activity,
+  },
+  {
+    title: "Supplenze",
+    href: "/dashboard/supplenze",
+    icon: UserCog,
   },
   {
     title: "Tipi Recupero",

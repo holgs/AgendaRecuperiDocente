@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
           school_year_id,
           modules_annual,
           modules_used,
+          minutes_weekly,
           minutes_annual,
           minutes_used
         )
@@ -70,6 +71,7 @@ export async function GET(request: NextRequest) {
           modulesAnnual: budget.modules_annual,
           modulesUsed: budget.modules_used || 0,
           modulesAvailable: budget.modules_annual - (budget.modules_used || 0),
+          minutesWeekly: budget.minutes_weekly || 0,
           minutesAnnual: budget.minutes_annual,
           minutesUsed: budget.minutes_used || 0,
           minutesAvailable: budget.minutes_annual - (budget.minutes_used || 0),
