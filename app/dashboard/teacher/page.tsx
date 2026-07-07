@@ -30,6 +30,8 @@ import {
 import { format } from "date-fns"
 import { it } from "date-fns/locale"
 import { formatHoursMinutes } from "@/lib/time"
+import { useSortableTable, type SortAccessors } from "@/hooks/use-sortable-table"
+import { SortableTableHead } from "@/components/ui/sortable-table-head"
 
 type BudgetData = {
   id: string
@@ -76,6 +78,16 @@ type DashboardData = {
   message: string | null
 }
 
+const activitySortAccessors: SortAccessors<Activity> = {
+  date: (a) => a.date,
+  module_number: (a) => a.module_number,
+  type: (a) => a.recovery_type?.name,
+  class_name: (a) => a.class_name,
+  title: (a) => a.title,
+  duration_minutes: (a) => a.duration_minutes,
+  status: (a) => a.status,
+}
+
 export default function TeacherDashboardPage() {
   const router = useRouter()
   const { toast } = useToast()
@@ -86,6 +98,9 @@ export default function TeacherDashboardPage() {
   const [showActivityDialog, setShowActivityDialog] = useState(false)
   const [recoveryTypes, setRecoveryTypes] = useState<Array<{ id: string; name: string; color: string }>>([])
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null)
+
+  const { sorted: sortedActivities, sortKey, sortDirection, requestSort } =
+    useSortableTable(activities, activitySortAccessors)
 
   useEffect(() => {
     fetchDashboardData()
@@ -446,18 +461,18 @@ export default function TeacherDashboardPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Unità Oraria</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Classe</TableHead>
-                  <TableHead>Titolo</TableHead>
-                  <TableHead className="text-right">Durata</TableHead>
-                  <TableHead>Stato</TableHead>
+                  <SortableTableHead label="Data" sortKey="date" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Unità Oraria" sortKey="module_number" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Tipo" sortKey="type" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Classe" sortKey="class_name" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Titolo" sortKey="title" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Durata" sortKey="duration_minutes" activeKey={sortKey} direction={sortDirection} onSort={requestSort} className="text-right" />
+                  <SortableTableHead label="Stato" sortKey="status" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {activities.map((activity) => (
+                {sortedActivities.map((activity) => (
                   <TableRow key={activity.id}>
                     <TableCell className="font-medium">
                       {format(new Date(activity.date), 'dd MMM yyyy', { locale: it })}

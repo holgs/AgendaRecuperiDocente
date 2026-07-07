@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/table"
 import { useToast } from "@/components/ui/use-toast"
 import { Upload, FileCheck, AlertCircle, Loader2, CheckCircle2, X } from "lucide-react"
+import { useSortableTable, type SortAccessors } from "@/hooks/use-sortable-table"
+import { SortableTableHead } from "@/components/ui/sortable-table-head"
 
 type PreviewRow = {
   docente: string
@@ -23,6 +25,14 @@ type PreviewRow = {
   tesorettoAnnuale: number
   moduliAnnui: number
   saldo: number
+}
+
+const previewSortAccessors: SortAccessors<PreviewRow> = {
+  docente: (r) => r.docente,
+  minutiSettimanali: (r) => r.minutiSettimanali,
+  tesorettoAnnuale: (r) => r.tesorettoAnnuale,
+  moduliAnnui: (r) => r.moduliAnnui,
+  saldo: (r) => r.saldo,
 }
 
 type ImportError = {
@@ -55,6 +65,9 @@ export default function ImportPage() {
   const [result, setResult] = useState<ImportResult | null>(null)
   const [schoolYear, setSchoolYear] = useState<string>("")
   const [yearError, setYearError] = useState<string>("")
+
+  const { sorted: sortedPreview, sortKey, sortDirection, requestSort } =
+    useSortableTable(preview, previewSortAccessors)
 
   function validateYearFormat(value: string): boolean {
     // Format: YYYY-YY (es. 2024-25)
@@ -454,15 +467,15 @@ export default function ImportPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Docente</TableHead>
-                  <TableHead>Min/Settimana</TableHead>
-                  <TableHead>Tesoretto Annuale</TableHead>
-                  <TableHead>Moduli Annui</TableHead>
-                  <TableHead>Saldo</TableHead>
+                  <SortableTableHead label="Docente" sortKey="docente" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Min/Settimana" sortKey="minutiSettimanali" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Tesoretto Annuale" sortKey="tesorettoAnnuale" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Moduli Annui" sortKey="moduliAnnui" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Saldo" sortKey="saldo" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {preview.map((row, i) => (
+                {sortedPreview.map((row, i) => (
                   <TableRow key={i}>
                     <TableCell className="font-medium">{row.docente}</TableCell>
                     <TableCell>{row.minutiSettimanali}</TableCell>

@@ -50,6 +50,8 @@ import { UserPlus, Trash2, Loader2, Users } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { useSortableTable, type SortAccessors } from "@/hooks/use-sortable-table"
+import { SortableTableHead } from "@/components/ui/sortable-table-head"
 
 // Form validation schema
 const createAdminSchema = z.object({
@@ -64,6 +66,12 @@ type AdminUser = {
   email: string
   name: string | null
   created_at: string
+}
+
+const adminUserSortAccessors: SortAccessors<AdminUser> = {
+  email: (u) => u.email,
+  name: (u) => u.name,
+  created_at: (u) => u.created_at,
 }
 
 export function AdminUsersSection() {
@@ -82,6 +90,9 @@ export function AdminUsersSection() {
       name: '',
     },
   })
+
+  const { sorted: sortedUsers, sortKey, sortDirection, requestSort } =
+    useSortableTable(users, adminUserSortAccessors)
 
   useEffect(() => {
     fetchUsers()
@@ -286,14 +297,14 @@ export function AdminUsersSection() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Data Creazione</TableHead>
+                <SortableTableHead label="Email" sortKey="email" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                <SortableTableHead label="Nome" sortKey="name" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                <SortableTableHead label="Data Creazione" sortKey="created_at" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
                 <TableHead className="text-right">Azioni</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {sortedUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.email}</TableCell>
                   <TableCell>{user.name || '-'}</TableCell>
