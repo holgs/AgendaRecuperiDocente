@@ -11,6 +11,7 @@ import {
   Upload,
   Settings,
   BookOpen,
+  Archive,
 } from "lucide-react"
 
 // Admin navigation items
@@ -39,6 +40,11 @@ const adminNavItems = [
     title: "Import Tesoretti",
     href: "/dashboard/import",
     icon: Upload,
+  },
+  {
+    title: "Backup",
+    href: "/dashboard/backup",
+    icon: Archive,
   },
   {
     title: "Impostazioni",
