@@ -30,7 +30,10 @@ export default async function DashboardLayout({
     .eq('email', user.email)
     .single()
 
-  const userRole = (publicUser?.role as 'admin' | 'teacher') || 'admin'
+  // Least privilege: a user without a provisioned public.users row is treated as
+  // 'teacher', never admin (fixes audit finding H1). Real authorization is enforced
+  // by RLS + requireAdmin on the API; this only gates the UI.
+  const userRole = (publicUser?.role as 'admin' | 'teacher') || 'teacher'
 
   return (
     <div className="flex min-h-screen">

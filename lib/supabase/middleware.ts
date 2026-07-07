@@ -49,10 +49,12 @@ export async function updateSession(request: NextRequest) {
     userRole = publicUser?.role as 'admin' | 'teacher' | null
   }
 
-  // Redirect authenticated users from login page to appropriate dashboard
+  // Redirect authenticated users from login page to appropriate dashboard.
+  // Only an explicit 'admin' role reaches the admin dashboard; anything else
+  // (teacher or an unprovisioned/missing role) goes to the teacher area (H1).
   if (user && request.nextUrl.pathname === '/login') {
     const url = request.nextUrl.clone()
-    url.pathname = userRole === 'teacher' ? '/dashboard/teacher' : '/dashboard'
+    url.pathname = userRole === 'admin' ? '/dashboard' : '/dashboard/teacher'
     return NextResponse.redirect(url)
   }
 
@@ -64,11 +66,12 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Role-based route protection
-  if (user && userRole) {
+  if (user) {
     const pathname = request.nextUrl.pathname
 
-    // Teachers can only access /dashboard/teacher routes
-    if (userRole === 'teacher' && pathname.startsWith('/dashboard') && !pathname.startsWith('/dashboard/teacher')) {
+    // Only admins may access the admin dashboard; teachers and any user without
+    // an explicit admin role are confined to /dashboard/teacher (H1).
+    if (userRole !== 'admin' && pathname.startsWith('/dashboard') && !pathname.startsWith('/dashboard/teacher')) {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard/teacher'
       return NextResponse.redirect(url)
