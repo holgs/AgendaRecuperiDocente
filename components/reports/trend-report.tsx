@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -28,6 +29,8 @@ const ALL = "__all__"
 export function TrendReport({ data }: { data: ReportData }) {
   const [granularity, setGranularity] = useState<Granularity>("week")
   const [teacherId, setTeacherId] = useState<string>(ALL)
+  const [showRecuperato, setShowRecuperato] = useState(true)
+  const [showCumulato, setShowCumulato] = useState(true)
 
   const teachers = useMemo(
     () =>
@@ -69,6 +72,16 @@ export function TrendReport({ data }: { data: ReportData }) {
               </SelectContent>
             </Select>
           </div>
+          <div className="flex items-end gap-4">
+            <div className="flex items-center gap-2">
+              <Switch id="show-recuperato" checked={showRecuperato} onCheckedChange={setShowRecuperato} />
+              <Label htmlFor="show-recuperato" className="text-xs">Recuperato</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch id="show-cumulato" checked={showCumulato} onCheckedChange={setShowCumulato} />
+              <Label htmlFor="show-cumulato" className="text-xs">Cumulato</Label>
+            </div>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -88,22 +101,26 @@ export function TrendReport({ data }: { data: ReportData }) {
                 />
                 <Tooltip formatter={(value) => formatHoursMinutes(Number(value))} />
                 <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="recuperato"
-                  name="Recuperato nel periodo"
-                  stroke="#16a34a"
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="cumulato"
-                  name="Totale cumulato"
-                  stroke="#2563eb"
-                  strokeWidth={2}
-                  dot={false}
-                />
+                {showRecuperato && (
+                  <Line
+                    type="monotone"
+                    dataKey="recuperato"
+                    name="Recuperato nel periodo"
+                    stroke="#16a34a"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                )}
+                {showCumulato && (
+                  <Line
+                    type="monotone"
+                    dataKey="cumulato"
+                    name="Totale cumulato"
+                    stroke="#2563eb"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                )}
               </LineChart>
             </ResponsiveContainer>
           </div>
