@@ -13,6 +13,7 @@ import {
   BookOpen,
   Archive,
   Clock,
+  BarChart3,
 } from "lucide-react"
 
 // Admin navigation items
@@ -31,6 +32,11 @@ const adminNavItems = [
     title: "Attività Recupero",
     href: "/dashboard/activities",
     icon: Activity,
+  },
+  {
+    title: "Report",
+    href: "/dashboard/reports",
+    icon: BarChart3,
   },
   {
     title: "Tipi Recupero",
