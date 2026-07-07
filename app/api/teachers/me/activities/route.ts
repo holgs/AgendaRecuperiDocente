@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireTeacher } from '@/lib/auth/roles'
+import { resolveModuleDuration } from '@/lib/modules/duration'
 
 export const dynamic = 'force-dynamic'
 
@@ -133,7 +134,7 @@ export async function POST(request: NextRequest) {
     // Step 1: Get teacher's budget for this school year
     const { data: budget, error: budgetError } = await supabase
       .from('teacher_budgets')
-      .select('id, modules_annual, modules_used, minutes_used')
+      .select('id, modules_annual, modules_used, minutes_annual, minutes_used')
       .eq('teacher_id', teacherId)
       .eq('school_year_id', school_year_id)
       .single()
@@ -145,16 +146,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Step 2: Check budget availability
+    // Step 2: Resolve module duration from the admin grid and check budget in MINUTES
     const modulesUsed = budget.modules_used || 0
-    if (modulesUsed >= budget.modules_annual) {
+    const { minutes: durationMinutes } = await resolveModuleDuration(supabase, {
+      schoolYearId: school_year_id,
+      date,
+      moduleNumber: module_number,
+    })
+    const minutesRemaining = (budget.minutes_annual || 0) - (budget.minutes_used || 0)
+    if (durationMinutes > minutesRemaining) {
       return NextResponse.json(
         {
-          error: 'Budget esaurito: non ci sono moduli disponibili',
+          error: 'Budget esaurito: minuti disponibili insufficienti per questo modulo',
           budget: {
-            annual: budget.modules_annual,
-            used: modulesUsed,
-            remaining: 0,
+            annual_minutes: budget.minutes_annual || 0,
+            used_minutes: budget.minutes_used || 0,
+            remaining_minutes: minutesRemaining,
           },
         },
         { status: 400 }
@@ -208,10 +215,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Step 5: Get recovery type for default duration
+    // Step 5: Get recovery type (for the activity title)
     const { data: recoveryType } = await supabase
       .from('recovery_types')
-      .select('name, default_duration')
+      .select('name')
       .eq('id', recovery_type_id)
       .single()
 
@@ -219,9 +226,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tipo di recupero non trovato' }, { status: 404 })
     }
 
-    // Calculate duration and modules (1 module = 50 minutes by default)
-    const durationMinutes = recoveryType.default_duration || 50
-    const modulesEquivalent = Math.ceil(durationMinutes / 50)
+    // Duration already resolved from the module grid (Step 2). Keep a legacy
+    // module-equivalent for backward compatibility (minutes are authoritative).
+    const modulesEquivalent = Math.round(durationMinutes / 50)
 
     // Generate activity title
     const activityTitle = `${recoveryType.name} - ${class_name} - Modulo ${module_number}`
@@ -283,14 +290,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Return success with activity and optional warning
+    // Return success with activity and optional warning (minutes are authoritative)
+    const newMinutesUsed = (budget.minutes_used || 0) + durationMinutes
     return NextResponse.json(
       {
         activity: newActivity,
         warning,
         budget: {
-          modules_used: modulesUsed + modulesEquivalent,
-          modules_remaining: budget.modules_annual - (modulesUsed + modulesEquivalent),
+          minutes_used: newMinutesUsed,
+          minutes_remaining: (budget.minutes_annual || 0) - newMinutesUsed,
+          duration_minutes: durationMinutes,
         },
       },
       { status: 201 }

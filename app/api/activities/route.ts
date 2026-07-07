@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveModuleDuration } from '@/lib/modules/duration'
 
 export const dynamic = 'force-dynamic'
 
@@ -100,12 +101,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const modulesRemaining = budget.modules_annual - (budget.modules_used || 0)
-    console.log('📊 Modules remaining:', modulesRemaining)
-    if (modulesRemaining < 1) {
-      console.log('❌ Budget exhausted')
+    // Resolve module duration from the admin-defined grid (Punto 3): the minutes
+    // deducted depend on the weekday of `date` and the module slot, not a fixed 50.
+    const { minutes: durationMinutes } = await resolveModuleDuration(supabase, {
+      schoolYearId: school_year_id,
+      date,
+      moduleNumber: module_number,
+    })
+
+    // Budget is accounted in MINUTES (single source of truth).
+    const minutesRemaining = (budget.minutes_annual || 0) - (budget.minutes_used || 0)
+    if (durationMinutes > minutesRemaining) {
       return NextResponse.json(
-        { error: 'Budget esaurito: non ci sono moduli disponibili' },
+        { error: 'Budget esaurito: minuti disponibili insufficienti per questo modulo' },
         { status: 400 }
       )
     }
@@ -180,8 +188,8 @@ export async function POST(request: NextRequest) {
       module_number,
       class_name,
       title: `Recupero ${class_name} - Unità Oraria ${module_number}`,
-      duration_minutes: 50,
-      modules_equivalent: 1,
+      duration_minutes: durationMinutes,
+      modules_equivalent: Math.round(durationMinutes / 50),
       status: 'planned',
       created_by: publicUserId,
       co_teacher_name: co_teacher_name || null
@@ -208,8 +216,8 @@ export async function POST(request: NextRequest) {
     // Update teacher budget
     console.log('💰 Updating budget...')
     const budgetUpdate = {
-      modules_used: (budget.modules_used || 0) + 1,
-      minutes_used: (budget.minutes_used || 0) + 50
+      modules_used: (budget.modules_used || 0) + Math.round(durationMinutes / 50),
+      minutes_used: (budget.minutes_used || 0) + durationMinutes
     }
     console.log('💰 Budget update data:', budgetUpdate)
 

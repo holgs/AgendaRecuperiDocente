@@ -23,6 +23,7 @@ import {
   Menu,
   GraduationCap,
   Archive,
+  Clock,
 } from "lucide-react"
 
 // Admin navigation items
@@ -51,6 +52,11 @@ const adminNavItems = [
     title: "Import Tesoretti",
     href: "/dashboard/import",
     icon: Upload,
+  },
+  {
+    title: "Durate moduli",
+    href: "/dashboard/module-durations",
+    icon: Clock,
   },
   {
     title: "Backup",
