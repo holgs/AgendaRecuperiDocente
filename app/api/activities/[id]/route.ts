@@ -219,12 +219,15 @@ export async function DELETE(
       })
     }
 
-    // Restore budget
+    // Restore budget using the activity's actual frozen duration (Punto 3),
+    // not a fixed 50, since module durations vary by weekday/slot.
+    const minutesToRefund = activity.duration_minutes || 0
+    const modulesToRefund = activity.modules_equivalent || 0
     const { error: updateError } = await supabase
       .from('teacher_budgets')
       .update({
-        modules_used: Math.max(0, (budget.modules_used || 0) - 1),
-        minutes_used: Math.max(0, (budget.minutes_used || 0) - 50)
+        modules_used: Math.max(0, (budget.modules_used || 0) - modulesToRefund),
+        minutes_used: Math.max(0, (budget.minutes_used || 0) - minutesToRefund)
       })
       .eq('id', budget.id)
 

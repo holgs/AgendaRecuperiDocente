@@ -37,6 +37,8 @@ import {
 import { useToast } from "@/components/ui/use-toast"
 import { ColorPicker } from "@/components/ui/color-picker"
 import { Plus, Pencil, Trash2, Search, Loader2, CheckCircle2, XCircle } from "lucide-react"
+import { useSortableTable, type SortAccessors } from "@/hooks/use-sortable-table"
+import { SortableTableHead } from "@/components/ui/sortable-table-head"
 
 type RecoveryType = {
   id: string
@@ -50,6 +52,15 @@ type RecoveryType = {
   _count?: {
     recovery_activities: number
   }
+}
+
+const typeSortAccessors: SortAccessors<RecoveryType> = {
+  name: (t) => t.name,
+  description: (t) => t.description,
+  default_duration: (t) => t.default_duration,
+  requires_approval: (t) => (t.requires_approval ? 1 : 0),
+  is_active: (t) => (t.is_active ? 1 : 0),
+  usage: (t) => t._count?.recovery_activities ?? 0,
 }
 
 type FormData = {
@@ -230,6 +241,9 @@ export default function RecoveryTypesPage() {
       type.description?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const { sorted: sortedTypes, sortKey, sortDirection, requestSort } =
+    useSortableTable(filteredTypes, typeSortAccessors)
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -390,17 +404,17 @@ export default function RecoveryTypesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Descrizione</TableHead>
-                  <TableHead>Durata</TableHead>
-                  <TableHead>Approvazione</TableHead>
-                  <TableHead>Stato</TableHead>
-                  <TableHead>Utilizzo</TableHead>
+                  <SortableTableHead label="Nome" sortKey="name" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Descrizione" sortKey="description" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Durata" sortKey="default_duration" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Approvazione" sortKey="requires_approval" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Stato" sortKey="is_active" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+                  <SortableTableHead label="Utilizzo" sortKey="usage" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
                   <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTypes.map((type) => (
+                {sortedTypes.map((type) => (
                   <TableRow key={type.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">

@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input"
 import { Plus, Loader2, Search } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { TeacherEditDialog } from "@/components/teachers/teacher-edit-dialog"
+import { useSortableTable, type SortAccessors } from "@/hooks/use-sortable-table"
+import { SortableTableHead } from "@/components/ui/sortable-table-head"
 
 type TeacherWithBudget = {
   id: string
@@ -32,6 +34,16 @@ type TeacherWithBudget = {
     minutesAvailable: number
     percentageUsed: number
   } | null
+}
+
+const teacherSortAccessors: SortAccessors<TeacherWithBudget> = {
+  cognome: (t) => t.cognome,
+  nome: (t) => t.nome,
+  email: (t) => t.email,
+  modulesAnnual: (t) => t.budget?.modulesAnnual,
+  modulesUsed: (t) => t.budget?.modulesUsed,
+  modulesAvailable: (t) => t.budget?.modulesAvailable,
+  percentageUsed: (t) => t.budget?.percentageUsed,
 }
 
 type TeachersData = {
@@ -83,6 +95,9 @@ export default function TeachersPage() {
       teacher.email?.toLowerCase().includes(searchLower)
     )
   }) || []
+
+  const { sorted: sortedTeachers, sortKey, sortDirection, requestSort } =
+    useSortableTable(filteredTeachers, teacherSortAccessors)
 
   function getBudgetStatusVariant(percentage: number): "default" | "secondary" | "destructive" {
     if (percentage >= 80) return "destructive"
@@ -136,25 +151,25 @@ export default function TeachersPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Cognome</TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead className="text-right">Moduli Annuali</TableHead>
-              <TableHead className="text-right">Moduli Usati</TableHead>
-              <TableHead className="text-right">Moduli Disponibili</TableHead>
-              <TableHead className="text-right">Utilizzo</TableHead>
+              <SortableTableHead label="Cognome" sortKey="cognome" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+              <SortableTableHead label="Nome" sortKey="nome" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+              <SortableTableHead label="Email" sortKey="email" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+              <SortableTableHead label="Moduli Annuali" sortKey="modulesAnnual" activeKey={sortKey} direction={sortDirection} onSort={requestSort} className="text-right" />
+              <SortableTableHead label="Moduli Usati" sortKey="modulesUsed" activeKey={sortKey} direction={sortDirection} onSort={requestSort} className="text-right" />
+              <SortableTableHead label="Moduli Disponibili" sortKey="modulesAvailable" activeKey={sortKey} direction={sortDirection} onSort={requestSort} className="text-right" />
+              <SortableTableHead label="Utilizzo" sortKey="percentageUsed" activeKey={sortKey} direction={sortDirection} onSort={requestSort} className="text-right" />
               <TableHead className="text-right">Azioni</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTeachers.length === 0 ? (
+            {sortedTeachers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center text-muted-foreground py-10">
                   {searchQuery ? 'Nessun docente trovato' : 'Nessun docente registrato'}
                 </TableCell>
               </TableRow>
             ) : (
-              filteredTeachers.map((teacher) => (
+              sortedTeachers.map((teacher) => (
                 <TableRow
                   key={teacher.id}
                   className="cursor-pointer hover:bg-muted/50"
