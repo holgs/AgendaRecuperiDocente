@@ -14,6 +14,7 @@ import {
   Archive,
   Clock,
   BarChart3,
+  UserCog,
 } from "lucide-react"
 
 // Admin navigation items
@@ -37,6 +38,11 @@ const adminNavItems = [
     title: "Report",
     href: "/dashboard/reports",
     icon: BarChart3,
+  },
+  {
+    title: "Supplenze",
+    href: "/dashboard/supplenze",
+    icon: UserCog,
   },
   {
     title: "Tipi Recupero",
