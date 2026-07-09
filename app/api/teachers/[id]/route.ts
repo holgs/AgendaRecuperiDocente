@@ -8,6 +8,8 @@ const updateTeacherSchema = z.object({
   cognome: z.string().min(1, 'Cognome obbligatorio').optional(),
   nome: z.string().min(1, 'Nome obbligatorio').optional(),
   email: z.string().email('Email non valida').optional(),
+  contract_type: z.enum(['ruolo', 'tempo_determinato']).nullable().optional(),
+  is_archived: z.boolean().optional(),
 })
 
 export async function GET(
@@ -182,6 +184,8 @@ export async function PATCH(
     if (validatedData.cognome !== undefined) updateData.cognome = validatedData.cognome
     if (validatedData.nome !== undefined) updateData.nome = validatedData.nome
     if (validatedData.email !== undefined) updateData.email = validatedData.email
+    if (validatedData.contract_type !== undefined) updateData.contract_type = validatedData.contract_type
+    if (validatedData.is_archived !== undefined) updateData.is_archived = validatedData.is_archived
 
     // Update teacher
     const { data: updatedTeacher, error: updateError } = await supabase

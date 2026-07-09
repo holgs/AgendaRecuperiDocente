@@ -26,6 +26,7 @@ import {
   Clock,
   BarChart3,
   UserCog,
+  CalendarPlus,
 } from "lucide-react"
 
 // Admin navigation items
@@ -74,6 +75,11 @@ const adminNavItems = [
     title: "Backup",
     href: "/dashboard/backup",
     icon: Archive,
+  },
+  {
+    title: "Nuovo anno",
+    href: "/dashboard/new-year",
+    icon: CalendarPlus,
   },
   {
     title: "Impostazioni",

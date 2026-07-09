@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
         nome,
         cognome,
         email,
+        contract_type,
+        is_archived,
         teacher_budgets!inner (
           id,
           school_year_id,
@@ -66,6 +68,8 @@ export async function GET(request: NextRequest) {
         nome: teacher.nome,
         cognome: teacher.cognome,
         email: teacher.email,
+        contract_type: (teacher as any).contract_type ?? null,
+        is_archived: (teacher as any).is_archived ?? false,
         budget: budget ? {
           id: budget.id,
           modulesAnnual: budget.modules_annual,

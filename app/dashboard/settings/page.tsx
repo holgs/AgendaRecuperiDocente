@@ -1,5 +1,6 @@
 import { ClearDataSection } from "@/components/settings/clear-data-section"
 import { AdminUsersSection } from "@/components/settings/admin-users-section"
+import { ArchivedTeachersSection } from "@/components/settings/archived-teachers-section"
 import { Settings } from "lucide-react"
 
 export default function SettingsPage() {
@@ -18,6 +19,9 @@ export default function SettingsPage() {
       <div className="grid gap-6">
         {/* Admin Users Management */}
         <AdminUsersSection />
+
+        {/* Archived (fixed-term) teachers — reactivation */}
+        <ArchivedTeachersSection />
 
         {/* Clear Data Operations */}
         <ClearDataSection />
