@@ -1,7 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -65,9 +72,26 @@ export default function ImportPage() {
   const [result, setResult] = useState<ImportResult | null>(null)
   const [schoolYear, setSchoolYear] = useState<string>("")
   const [yearError, setYearError] = useState<string>("")
+  const [schoolYears, setSchoolYears] = useState<{ id: string; name: string; is_active: boolean | null }[]>([])
 
   const { sorted: sortedPreview, sortKey, sortDirection, requestSort } =
     useSortableTable(preview, previewSortAccessors)
+
+  // Load existing school years for the selector (default to the active one).
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const res = await fetch("/api/school-years")
+        const json = await res.json()
+        const list = Array.isArray(json) ? json : json.schoolYears ?? []
+        setSchoolYears(list)
+        const active = list.find((y: { is_active: boolean | null }) => y.is_active)
+        if (active) setSchoolYear(active.name)
+      } catch {
+        /* selector stays empty on failure */
+      }
+    })()
+  }, [])
 
   function validateYearFormat(value: string): boolean {
     // Format: YYYY-YY (es. 2024-25)
@@ -192,11 +216,11 @@ export default function ImportPage() {
       return
     }
 
-    if (!schoolYear || !validateYearFormat(schoolYear)) {
+    if (!schoolYear) {
       toast({
         variant: "destructive",
         title: "Errore",
-        description: "Inserisci un anno scolastico valido (es. 2024-25)",
+        description: "Seleziona un anno scolastico",
       })
       return
     }
@@ -267,24 +291,24 @@ export default function ImportPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* School Year Input */}
+            {/* School Year Selector */}
             <div className="space-y-2">
               <Label htmlFor="school-year">Anno Scolastico</Label>
-              <Input
-                id="school-year"
-                type="text"
-                placeholder="2024-25"
-                value={schoolYear}
-                onChange={(e) => handleYearChange(e.target.value)}
-                disabled={isUploading}
-                maxLength={7}
-                className={yearError ? "border-red-500" : ""}
-              />
-              {yearError && (
-                <p className="text-sm text-red-500">{yearError}</p>
-              )}
+              <Select value={schoolYear} onValueChange={setSchoolYear} disabled={isUploading}>
+                <SelectTrigger id="school-year">
+                  <SelectValue placeholder="Seleziona un anno" />
+                </SelectTrigger>
+                <SelectContent>
+                  {schoolYears.map((y) => (
+                    <SelectItem key={y.id} value={y.name}>
+                      {y.name}
+                      {y.is_active ? " (attivo)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <p className="text-xs text-muted-foreground">
-                Formato: YYYY-YY (es. 2024-25)
+                I tesoretti verranno importati nell&apos;anno selezionato (sovrascrivendo quelli esistenti).
               </p>
             </div>
 
@@ -340,7 +364,7 @@ export default function ImportPage() {
 
             <Button
               onClick={handleImport}
-              disabled={!file || !schoolYear || !!yearError || isUploading}
+              disabled={!file || !schoolYear || isUploading}
               className="w-full"
             >
               {isUploading ? (
