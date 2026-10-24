@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { fetchBudgetActivities, summarizeBudget } from '@/lib/budgets/usage'
 
 export const dynamic = 'force-dynamic'
 
@@ -66,27 +67,15 @@ export async function GET(
       .eq('school_year_id', activeYear.id)
       .single()
 
-    // Calculate budget statistics
-    let budgetStats = null
-    if (budget) {
-      const modulesAnnual = budget.modules_annual || 0
-      const modulesUsed = budget.modules_used || 0
-      const modulesAvailable = modulesAnnual - modulesUsed
-
-      const minutesAnnual = budget.minutes_annual || 0
-      const minutesUsed = budget.minutes_used || 0
-      budgetStats = {
-        id: budget.id,
-        modulesAnnual,
-        modulesUsed,
-        modulesAvailable,
-        minutesAnnual,
-        minutesUsed,
-        minutesAvailable: minutesAnnual - minutesUsed,
-        // Minutes are the single source of truth (Punto 3)
-        percentageUsed: minutesAnnual > 0 ? Math.round((minutesUsed / minutesAnnual) * 100) : 0,
-      }
-    }
+    if (budgetError && budgetError.code !== 'PGRST116') throw budgetError
+    const budgetActivities = await fetchBudgetActivities(supabase, activeYear.id, teacherId)
+    const usage = summarizeBudget(budget?.minutes_annual || 0, budgetActivities)
+    const budgetStats = budget ? {
+      id: budget.id,
+      ...usage,
+      modulesAnnual: budget.modules_annual || 0,
+      modulesAvailable: Math.max(0, (budget.modules_annual || 0) - usage.modulesUsed),
+    } : null
 
     // Get activities for this teacher in active year
     const { data: activities, error: activitiesError } = await supabase
@@ -108,31 +97,11 @@ export async function GET(
       .eq('school_year_id', activeYear.id)
       .order('date', { ascending: false })
 
-    // Calculate activity statistics
-    let activityStats = {
-      toPlan: 0,
-      planned: 0,
-      completed: 0,
-    }
-
-    if (budgetStats) {
-      // All figures in MINUTES (Punto 3). The budget is consumed at creation time,
-      // so minutesUsed already includes BOTH planned and completed activities.
-      // Therefore the decomposition is:
-      //   annual = daPianificare + pianificati + recuperati
-      //   daPianificare = minutesAvailable (= annual - used), no extra subtraction.
-      if (activities && activities.length > 0) {
-        activities.forEach((activity: any) => {
-          const minutes = activity.duration_minutes || 0
-          if (activity.status === 'planned') {
-            activityStats.planned += minutes
-          } else if (activity.status === 'completed') {
-            activityStats.completed += minutes
-          }
-        })
-      }
-
-      activityStats.toPlan = Math.max(0, budgetStats.minutesAvailable)
+    if (activitiesError) throw activitiesError
+    const activityStats = {
+      toPlan: usage.minutesAvailable,
+      planned: usage.minutesPlanned,
+      completed: usage.minutesCompleted,
     }
 
     return NextResponse.json({

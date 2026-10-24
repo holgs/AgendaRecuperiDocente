@@ -41,6 +41,9 @@ type BudgetData = {
   minutes_annual: number
   minutes_used: number
   minutes_remaining: number
+  minutes_completed: number
+  minutes_planned: number
+  minutes_available: number
   modules_annual: number
   modules_used: number
   modules_remaining: number
@@ -225,8 +228,8 @@ export default function TeacherDashboardPage() {
         description: newStatus === 'completed' ? 'Attività completata' : 'Attività riaperta',
       })
 
-      // Refresh activities
-      fetchActivities()
+      // Completion/reopening changes recovered and remaining minutes too.
+      await Promise.all([fetchDashboardData(), fetchActivities()])
     } catch (error) {
       console.error('Error toggling activity status:', error)
       toast({
@@ -307,7 +310,7 @@ export default function TeacherDashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Contatta l'amministrazione per verificare lo stato del tuo budget annuale.
+              Contatta l&apos;amministrazione per verificare lo stato del tuo budget annuale.
             </p>
             <Button onClick={() => router.push('/login')} variant="outline">
               Torna al Login
@@ -337,7 +340,7 @@ export default function TeacherDashboardPage() {
         <CardHeader>
           <CardTitle>Il Tuo Tesoretto</CardTitle>
           <CardDescription>
-            Stato del budget per l'anno scolastico {budget.school_year_name}
+            Stato del budget per l&apos;anno scolastico {budget.school_year_name}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -366,7 +369,7 @@ export default function TeacherDashboardPage() {
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Recuperato</p>
               <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {formatHoursMinutes(budget.minutes_used)}
+                {formatHoursMinutes(budget.minutes_completed)}
               </p>
             </div>
             <div className="space-y-1">
@@ -378,10 +381,10 @@ export default function TeacherDashboardPage() {
           </div>
 
           {/* Warning for low budget */}
-          {budget.minutes_remaining <= 0 && (
+          {budget.minutes_available <= 0 && (
             <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
               <p className="text-sm font-medium text-destructive">
-                ⚠️ Budget esaurito: non puoi creare nuove attività. Contatta l'amministrazione.
+                ⚠️ Budget esaurito: non puoi creare nuove attività. Contatta l&apos;amministrazione.
               </p>
             </div>
           )}
@@ -437,8 +440,8 @@ export default function TeacherDashboardPage() {
             </div>
             <Button
               onClick={handleCreateActivity}
-              disabled={budget.modules_remaining === 0}
-              title={budget.modules_remaining === 0 ? 'Budget esaurito' : 'Crea nuova attività'}
+              disabled={budget.minutes_available <= 0}
+              title={budget.minutes_available <= 0 ? 'Budget esaurito' : 'Crea nuova attività'}
             >
               <Plus className="mr-2 h-4 w-4" />
               Crea Attività
@@ -454,7 +457,7 @@ export default function TeacherDashboardPage() {
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <Calendar className="h-10 w-10 text-muted-foreground mb-4" />
               <p className="text-sm text-muted-foreground">
-                Nessuna attività creata. Clicca "Crea Attività" per iniziare.
+                Nessuna attività creata. Clicca &quot;Crea Attività&quot; per iniziare.
               </p>
             </div>
           ) : (

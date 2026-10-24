@@ -53,7 +53,7 @@ export function teacherSummary(data: ReportData): TeacherSummaryRow[] {
     const recuperato = completedByTeacher.get(b.teacher_id) ?? 0
     const pianificato = plannedByTeacher.get(b.teacher_id) ?? 0
     const monteOre = b.minutes_annual || 0
-    const daFare = Math.max(0, monteOre - (b.minutes_used || 0))
+    const daFare = Math.max(0, monteOre - recuperato - pianificato)
     return {
       teacher_id: b.teacher_id,
       teacher_name: b.teacher_name,

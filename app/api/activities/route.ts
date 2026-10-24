@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveModuleDuration } from '@/lib/modules/duration'
+import { fetchBudgetActivities, summarizeBudget } from '@/lib/budgets/usage'
 
 export const dynamic = 'force-dynamic'
 
@@ -110,7 +111,11 @@ export async function POST(request: NextRequest) {
     })
 
     // Budget is accounted in MINUTES (single source of truth).
-    const minutesRemaining = (budget.minutes_annual || 0) - (budget.minutes_used || 0)
+    const usage = summarizeBudget(
+      budget.minutes_annual || 0,
+      await fetchBudgetActivities(supabase, school_year_id, teacher_id),
+    )
+    const minutesRemaining = usage.minutesAvailable
     if (durationMinutes > minutesRemaining) {
       return NextResponse.json(
         { error: 'Budget esaurito: minuti disponibili insufficienti per questo modulo' },
@@ -216,8 +221,8 @@ export async function POST(request: NextRequest) {
     // Update teacher budget
     console.log('💰 Updating budget...')
     const budgetUpdate = {
-      modules_used: (budget.modules_used || 0) + Math.round(durationMinutes / 50),
-      minutes_used: (budget.minutes_used || 0) + durationMinutes
+      modules_used: usage.modulesUsed + Math.round(durationMinutes / 50),
+      minutes_used: usage.minutesUsed + durationMinutes
     }
     console.log('💰 Budget update data:', budgetUpdate)
 

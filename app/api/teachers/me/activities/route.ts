@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireTeacher } from '@/lib/auth/roles'
 import { resolveModuleDuration } from '@/lib/modules/duration'
+import { fetchBudgetActivities, summarizeBudget } from '@/lib/budgets/usage'
 
 export const dynamic = 'force-dynamic'
 
@@ -147,20 +148,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 2: Resolve module duration from the admin grid and check budget in MINUTES
-    const modulesUsed = budget.modules_used || 0
     const { minutes: durationMinutes } = await resolveModuleDuration(supabase, {
       schoolYearId: school_year_id,
       date,
       moduleNumber: module_number,
     })
-    const minutesRemaining = (budget.minutes_annual || 0) - (budget.minutes_used || 0)
+    const usage = summarizeBudget(
+      budget.minutes_annual || 0,
+      await fetchBudgetActivities(supabase, school_year_id, teacherId),
+    )
+    const minutesRemaining = usage.minutesAvailable
     if (durationMinutes > minutesRemaining) {
       return NextResponse.json(
         {
           error: 'Budget esaurito: minuti disponibili insufficienti per questo modulo',
           budget: {
             annual_minutes: budget.minutes_annual || 0,
-            used_minutes: budget.minutes_used || 0,
+            used_minutes: usage.minutesUsed,
             remaining_minutes: minutesRemaining,
           },
         },
@@ -275,8 +279,8 @@ export async function POST(request: NextRequest) {
     const { error: budgetUpdateError } = await supabase
       .from('teacher_budgets')
       .update({
-        modules_used: modulesUsed + modulesEquivalent,
-        minutes_used: (budget.minutes_used || 0) + durationMinutes,
+        modules_used: usage.modulesUsed + modulesEquivalent,
+        minutes_used: usage.minutesUsed + durationMinutes,
       })
       .eq('id', budget.id)
 
@@ -291,7 +295,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Return success with activity and optional warning (minutes are authoritative)
-    const newMinutesUsed = (budget.minutes_used || 0) + durationMinutes
+    const newMinutesUsed = usage.minutesUsed + durationMinutes
     return NextResponse.json(
       {
         activity: newActivity,
