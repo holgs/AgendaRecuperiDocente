@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { fetchBudgetActivities, groupBudgetActivities, summarizeBudget } from '@/lib/budgets/usage'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,12 +58,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const activitiesByTeacher = groupBudgetActivities(
+      await fetchBudgetActivities(supabase, activeYear.id)
+    )
+
     // Transform data to include computed fields
     const teachersWithStats = (teachers || []).map(teacher => {
       const budget = Array.isArray(teacher.teacher_budgets)
         ? teacher.teacher_budgets[0]
         : teacher.teacher_budgets
 
+      const usage = summarizeBudget(budget?.minutes_annual || 0, activitiesByTeacher.get(teacher.id) ?? [])
       return {
         id: teacher.id,
         nome: teacher.nome,
@@ -73,15 +79,9 @@ export async function GET(request: NextRequest) {
         budget: budget ? {
           id: budget.id,
           modulesAnnual: budget.modules_annual,
-          modulesUsed: budget.modules_used || 0,
-          modulesAvailable: budget.modules_annual - (budget.modules_used || 0),
+          ...usage,
+          modulesAvailable: Math.max(0, budget.modules_annual - usage.modulesUsed),
           minutesWeekly: budget.minutes_weekly || 0,
-          minutesAnnual: budget.minutes_annual,
-          minutesUsed: budget.minutes_used || 0,
-          minutesAvailable: budget.minutes_annual - (budget.minutes_used || 0),
-          percentageUsed: budget.minutes_annual > 0
-            ? Math.round(((budget.minutes_used || 0) / budget.minutes_annual) * 100)
-            : 0
         } : null
       }
     })
