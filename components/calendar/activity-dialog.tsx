@@ -49,6 +49,7 @@ export function ActivityDialog({
   // Co-teacher field (for Copresenza only)
   const [coTeacherName, setCoTeacherName] = useState("")
   const [teachers, setTeachers] = useState<Array<{ id: string; cognome: string; nome: string }>>([])
+  const [teachersError, setTeachersError] = useState(false)
   const [coTeacherOpen, setCoTeacherOpen] = useState(false)
 
   // Persist className and recoveryTypeId across insertions
@@ -60,11 +61,12 @@ export function ActivityDialog({
     async function fetchTeachers() {
       try {
         const response = await fetch('/api/teachers')
-        if (response.ok) {
-          const data = await response.json()
-          setTeachers(data.teachers || [])
-        }
+        if (!response.ok) throw new Error('Impossibile caricare i docenti')
+        const data = await response.json()
+        setTeachers(data.teachers || [])
+        setTeachersError(false)
       } catch (err) {
+        setTeachersError(true)
         console.error('Error fetching teachers:', err)
       }
     }
@@ -276,9 +278,11 @@ export function ActivityDialog({
                   <Command>
                     <CommandInput placeholder="Cerca docente per cognome..." />
                     <CommandList>
-                      <CommandEmpty>Nessun docente trovato.</CommandEmpty>
+                      <CommandEmpty>{teachersError ? 'Impossibile caricare i docenti. Ricarica la pagina.' : 'Nessun docente trovato.'}</CommandEmpty>
                       <CommandGroup>
                         {teachers
+                          .filter((teacher) => teacher.id !== teacherId)
+                          .slice()
                           .sort((a, b) => a.cognome.localeCompare(b.cognome))
                           .map((teacher) => {
                             const fullName = `${teacher.cognome} ${teacher.nome}`
