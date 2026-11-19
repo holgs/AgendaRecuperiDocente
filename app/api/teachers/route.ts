@@ -11,6 +11,28 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    if (!user.email) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Teachers need a colleague directory for co-teaching, but must not be
+    // able to read other teachers' contact details or budgets.
+    const { data: appUser, error: appUserError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('email', user.email)
+      .maybeSingle()
+
+    if (appUserError) throw appUserError
+    if (!appUser || !['admin', 'teacher'].includes(appUser.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (appUser.role === 'teacher') {
+      const { data: teachers, error } = await supabase.rpc('active_teacher_directory')
+      if (error) throw error
+      return NextResponse.json({ teachers: teachers ?? [] })
+    }
 
     const { data: teachers, error } = await supabase
       .from('teachers')
